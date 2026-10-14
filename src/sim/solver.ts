@@ -244,7 +244,7 @@ export class Simulation {
         const d = Math.hypot(dx, dy);
         const R = r + b.thickness / 2;
         if (d >= R || d < 1e-9) continue;
-        if (A.fixed && B.fixed) b.contactLoad = Math.max(b.contactLoad, (1 / w.invMass) * PHYSICS.gravity);
+        b.contactLoad = Math.max(b.contactLoad, (1 / w.invMass) * PHYSICS.gravity);
         const pen = R - d;
         const nx = dx / d, ny = dy / d;
         const wa = (1 - t) * (1 - t) * A.invMass, wb = t * t * B.invMass;
@@ -317,13 +317,12 @@ export class Simulation {
       const f = b.forceAcc / substeps;
       b.force += (f - b.force) * k;
       const axialUtil = b.force >= 0 ? b.force / b.maxT : b.maxC > 0 ? -b.force / b.maxC : 0;
-      // A road member pinned directly between two fixed anchors cannot deflect in a pin-jointed
-      // solver, so axial force alone misses the wheel load entirely. Approximate its bending
-      // utilisation from the contact load and span, rather than letting this unsupported deck
-      // behave as an indestructible rigid plank.
-      const fixedRoadSpan = b.drivable && this.nodes[b.a].fixed && this.nodes[b.b].fixed;
-      const bendingCapacity = b.maxT * b.thickness * 1.5;
-      const bendingUtil = fixedRoadSpan && bendingCapacity > 0 ? (b.contactLoad * b.len) / (4 * bendingCapacity) : 0;
+      // The pin-jointed solver does not model beam bending, so road members can otherwise
+      // carry a wheel load without any axial force. Use a gameplay bending proxy for every
+      // contacted road span; shorter spans naturally tolerate more load and bracing helps by
+      // dividing the deck into shorter members. This is a balance approximation, not FEM.
+      const bendingCapacity = b.maxT * b.thickness * 3.0;
+      const bendingUtil = b.drivable && bendingCapacity > 0 ? (b.contactLoad * b.len) / (4 * bendingCapacity) : 0;
       b.util = Math.max(axialUtil, bendingUtil);
       if (this.time > PHYSICS.gravityRamp) this.peakUtil = Math.max(this.peakUtil, b.util);
       if (b.util > 1) b.damage += dt / PHYSICS.overloadTime;
