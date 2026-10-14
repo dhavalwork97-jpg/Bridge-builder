@@ -319,7 +319,7 @@ export class Simulation {
       const axialUtil = b.force >= 0 ? b.force / b.maxT : b.maxC > 0 ? -b.force / b.maxC : 0;
       // The pin-jointed solver does not model bending. Apply a bending proxy to unsupported
       // road spans, but leave members integrated into a braced truss to be judged by axial load.
-      // Shorter unsupported spans naturally tolerate more load. This is a game approximation,
+      // Calibrated so a short introductory crossing can survive, while a longer road-only span fails. Shorter unsupported spans naturally tolerate more load. This is a game approximation,
       // not a full beam-bending / finite-element solver.
       const hasBraceA = !this.nodes[b.a].fixed && this.beams.some((other) => {
         if (other === b || other.broken || other.drivable) return false;
@@ -332,7 +332,7 @@ export class Simulation {
         return oppositeId >= 0 && !this.nodes[oppositeId].fixed;
       });
       const unsupportedRoadSpan = b.drivable && !hasBraceA && !hasBraceB;
-      const bendingCapacity = b.maxT * b.thickness * 3.0;
+      const bendingCapacity = b.maxT * b.thickness * 0.6;
       const bendingUtil = unsupportedRoadSpan && bendingCapacity > 0 ? (b.contactLoad * b.len) / (4 * bendingCapacity) : 0;
       b.util = Math.max(axialUtil, bendingUtil);
       if (this.time > PHYSICS.gravityRamp) this.peakUtil = Math.max(this.peakUtil, b.util);
