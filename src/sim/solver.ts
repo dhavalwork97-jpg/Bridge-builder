@@ -26,7 +26,7 @@ export interface SimBeam {
   util: number;
   damage: number;
   broken: boolean;
-  lambda: number; forceAcc: number;
+  lambda: number; forceAcc: number; contactLoad: number;
 }
 export interface SimWheel {
   x: number; y: number; px: number; py: number; vx: number; vy: number; invMass: number;
@@ -99,7 +99,7 @@ export class Simulation {
       this.beams.push({
         id: bb.id, a: ia, b: ib, material: bb.material, rest: L, len: L, compliance: L / m.ea,
         tensionOnly: m.maxCompression === 0, drivable: m.drivable, maxT: m.maxTension, maxC: m.maxCompression, thickness: m.thickness,
-        force: 0, util: 0, damage: 0, broken: false, lambda: 0, forceAcc: 0,
+        force: 0, util: 0, damage: 0, broken: false, lambda: 0, forceAcc: 0, contactLoad: 0,
       });
     }
     this.nodes.forEach((n, i) => { n.invMass = n.fixed ? 0 : 1 / Math.max(PHYSICS.minNodeMass, mass[i]); });
@@ -120,7 +120,7 @@ export class Simulation {
     this.driveSpeed += clamp(targetSpeed - this.driveSpeed, -PHYSICS.brakeDeceleration * dt, PHYSICS.driveAcceleration * dt);
     this.braking = this.state !== 'running';
 
-    for (const b of this.beams) b.forceAcc = 0;
+    for (const b of this.beams) { b.forceAcc = 0; b.contactLoad = 0; }
     const damp = Math.max(0, 1 - PHYSICS.linearDamping * h);
     const vmax = PHYSICS.maxSpeedClamp;
 
@@ -244,6 +244,7 @@ export class Simulation {
         const d = Math.hypot(dx, dy);
         const R = r + b.thickness / 2;
         if (d >= R || d < 1e-9) continue;
+        b.contactLoad = Math.max(b.contactLoad, (1 / w.invMass) * PHYSICS.gravity);
         const pen = R - d;
         const nx = dx / d, ny = dy / d;
         const wa = (1 - t) * (1 - t) * A.invMass, wb = t * t * B.invMass;
@@ -315,7 +316,25 @@ export class Simulation {
       if (b.broken) continue;
       const f = b.forceAcc / substeps;
       b.force += (f - b.force) * k;
-      b.util = b.force >= 0 ? b.force / b.maxT : b.maxC > 0 ? -b.force / b.maxC : 0;
+      const axialUtil = b.force >= 0 ? b.force / b.maxT : b.maxC > 0 ? -b.force / b.maxC : 0;
+      // The pin-jointed solver does not model bending. Apply a bending proxy to unsupported
+      // road spans, but leave members integrated into a braced truss to be judged by axial load.
+      // Shorter unsupported spans naturally tolerate more load. This is a game approximation,
+      // not a full beam-bending / finite-element solver.
+      const hasBraceA = !this.nodes[b.a].fixed && this.beams.some((other) => {
+        if (other === b || other.broken || other.drivable) return false;
+        const oppositeId = other.a === b.a ? other.b : other.b === b.a ? other.a : -1;
+        return oppositeId >= 0 && !this.nodes[oppositeId].fixed;
+      });
+      const hasBraceB = !this.nodes[b.b].fixed && this.beams.some((other) => {
+        if (other === b || other.broken || other.drivable) return false;
+        const oppositeId = other.a === b.b ? other.b : other.b === b.b ? other.a : -1;
+        return oppositeId >= 0 && !this.nodes[oppositeId].fixed;
+      });
+      const unsupportedRoadSpan = b.drivable && !hasBraceA && !hasBraceB;
+      const bendingCapacity = b.maxT * b.thickness * 3.0;
+      const bendingUtil = unsupportedRoadSpan && bendingCapacity > 0 ? (b.contactLoad * b.len) / (4 * bendingCapacity) : 0;
+      b.util = Math.max(axialUtil, bendingUtil);
       if (this.time > PHYSICS.gravityRamp) this.peakUtil = Math.max(this.peakUtil, b.util);
       if (b.util > 1) b.damage += dt / PHYSICS.overloadTime;
       else b.damage = Math.max(0, b.damage - dt * 0.5);

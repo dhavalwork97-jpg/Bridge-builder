@@ -38,6 +38,20 @@ describe('construction rules', () => {
     expect(g.connect(a.id, { point: { x: 4, y: 0 } }, 'steel')).toEqual({ ok: false, reason: 'material' });
     expect(g.beams).toHaveLength(0);
   });
+  it('rejects beams that pass through an interior landmass, including between existing anchors', () => {
+    const level = gapLevel({
+      landmasses: [
+        { top: [{ x: -14, y: 0 }, { x: 0, y: 0 }] },
+        { top: [{ x: 4, y: -1 }, { x: 8, y: -1 }] },
+        { top: [{ x: 12, y: 0 }, { x: 26, y: 0 }] },
+      ],
+    });
+    const g = new BridgeGraph(level);
+    const leftWall = anchor(g, 0, -3);
+    const rightWall = anchor(g, 12, -3);
+    expect(g.connect(leftWall.id, { nodeId: rightWall.id }, 'cable')).toEqual({ ok: false, reason: 'insideTerrain' });
+    expect(g.beams).toHaveLength(0);
+  });
   it('enforces the budget and refunds on delete', () => {
     const g = new BridgeGraph(gapLevel({ budget: 700 }));
     const a = anchor(g, 0, 0);

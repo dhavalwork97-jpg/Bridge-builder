@@ -1,7 +1,7 @@
 import { BUILD, MATERIALS } from '../config';
 import { dist, snap } from '../math';
 import type { BBeam, BNode, GraphSnapshot, LevelDef, MaterialId, Vec2 } from '../types';
-import { isInsideTerrain } from './terrain';
+import { isInsideTerrain, segmentPassesThroughTerrain } from './terrain';
 
 export type RejectReason =
   | 'self' | 'duplicate' | 'budget' | 'material' | 'tooLong' | 'tooShort'
@@ -116,6 +116,7 @@ export class BridgeGraph {
       if (to.x < ba.minX || to.x > ba.maxX || to.y < ba.minY || to.y > ba.maxY) return fail('outOfBounds');
       if (isInsideTerrain(this.level.landmasses, { x: to.x, y: to.y })) return fail('insideTerrain');
     }
+    if (segmentPassesThroughTerrain(this.level.landmasses, from, { x: to.x, y: to.y })) return fail('insideTerrain');
     if (this.beams.length >= BUILD.maxBeams) return fail('maxBeams');
     if (cost > this.remainingBudget) return fail('budget');
     return { ok: true, cost, length };

@@ -462,6 +462,8 @@ export class Stage3D {
     for (const i of [this.road, this.dash, this.wood, this.steel, this.cable, this.spheres, this.rods, this.anchors]) i.reset();
     for (let k = 0; k < count; k++) {
       const b = beams[k], m = MATERIALS[b.material];
+      // Broken members stop carrying load in the solver; do not keep drawing them as intact.
+      if (b.broken) continue;
       const base = stressView ? heatColor(b.force, b.util) : stressTint(b.material === 'cable' ? '#2b2b33' : m.color, b.util);
       _c.set(base);
       if (b.util > 0.95 && !b.broken) _c.lerp(new Color('#ff3b30'), 0.35 + 0.35 * Math.sin(time * 30));

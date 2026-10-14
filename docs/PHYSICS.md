@@ -10,8 +10,9 @@
   averaged over substeps and smoothed with a 50 ms time constant.
 * **Cables** are one-sided: the multiplier is clamped so they only ever pull. A slack cable exerts no force and no damping.
 * **Failure:** utilisation = tension / `maxTension` or compression / `maxCompression`. A member that stays above 1.0 for 0.12 s
-  breaks (`damage` accumulates; it recovers slowly below 1.0). A broken member is removed from the solve and transmits nothing.
-  Compression limits stand in for buckling.
+  breaks (`damage` accumulates; it recovers slowly below 1.0). A broken member is removed from the solve, stops carrying load, and is no longer rendered as intact.
+  Compression limits stand in for buckling. Because a road beam pinned directly between two fixed anchors cannot deflect in a pin-jointed solver,
+  those fixed-to-fixed road spans also use a simple contact-load/span bending proxy; without it, the solver would treat such a deck as an indestructible plank.
 * **Integration:** fixed 60 Hz frame, 10 substeps (h = 1/600 s), 2 Gauss-Seidel iterations per substep, linear damping,
   extra axial damping, velocity clamp, NaN guard (a non-finite state fails the run safely). Gravity ramps in over 0.8 s so the
   structure settles without a dynamic shock. Rendering is decoupled (`FixedStepper` clamps frame deltas, drops backlog, and does not
@@ -27,7 +28,7 @@ are visual only. A run is **won** when the rear wheel passes the goal while touc
 the kill height, the vehicle is stuck (5 s), flipped (1.2 s), or the run exceeds 75 s.
 
 ## Documented approximations / limitations
-* Pin joints only: no bending stiffness or bending failure of members; a straight member between two anchors never sags.
+* Pin joints only: ordinary members have no bending stiffness or bending failure; a straight member between two anchors never sags. Fixed-to-fixed road spans use a gameplay bending proxy, not a full beam-bending solver.
 * 2D: no lateral load, no torsion. Members that cross do not interact (no intersection joints).
 * Joints and members do not collide with terrain or each other after placement (placement forbids joints inside terrain).
 * Material limits are game-balance numbers, not engineering data. This is not finite-element analysis.
