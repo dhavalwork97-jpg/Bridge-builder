@@ -1,7 +1,7 @@
 import { BUILD, MATERIALS } from '../config';
 import { dist, snap } from '../math';
 import type { BBeam, BNode, GraphSnapshot, LevelDef, MaterialId, Vec2 } from '../types';
-import { isInsideTerrain } from './terrain';
+import { isInsideTerrain, segmentPassesThroughTerrain } from './terrain';
 
 export type RejectReason =
   | 'self' | 'duplicate' | 'budget' | 'material' | 'tooLong' | 'tooShort'
