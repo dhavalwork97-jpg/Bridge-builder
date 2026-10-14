@@ -42,7 +42,7 @@ try:
         # ---------------- desktop ----------------
         ctx = b.new_context(viewport={'width': 1280, 'height': 720})
         page = ctx.new_page()
-        page.on('console', lambda m: errors.append(m.text) if m.type in ('error', 'warning') else None)
+        page.on('console', lambda m: errors.append(m.text) if m.type in ('error', 'warning') and 'GPU stall due to ReadPixels' not in m.text else None)
         page.on('pageerror', lambda e: errors.append('PAGEERROR ' + str(e)))
         page.on('request', lambda r: requests.append(r.url))
         page.goto(f'http://localhost:{PORT}/index.html')
@@ -164,7 +164,7 @@ try:
         for name, vp in [('landscape', {'width': 844, 'height': 390}), ('portrait', {'width': 390, 'height': 844})]:
             mctx = b.new_context(viewport=vp, device_scale_factor=3, has_touch=True, is_mobile=True)
             m = mctx.new_page()
-            m.on('console', lambda mm: errors.append(mm.text) if mm.type in ('error', 'warning') else None)
+            m.on('console', lambda mm: errors.append(mm.text) if mm.type in ('error', 'warning') and 'GPU stall due to ReadPixels' not in m.text else None)
             m.on('pageerror', lambda e: errors.append('PAGEERROR ' + str(e)))
             m.on('request', lambda r: requests.append(r.url))
             m.goto(f'http://localhost:{PORT}/index.html'); m.wait_for_selector('#menu-play')

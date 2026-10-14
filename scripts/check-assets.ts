@@ -1,8 +1,9 @@
+import { fileURLToPath } from 'node:url';
 /** Build check: no external asset/network references in source or the built bundle. */
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, extname } from 'node:path';
 
-const root = new URL('..', import.meta.url).pathname;
+const root = fileURLToPath(new URL('..', import.meta.url));
 const walk = (d: string, out: string[] = []): string[] => {
   for (const f of readdirSync(d)) { const p = join(d, f); statSync(p).isDirectory() ? walk(p, out) : out.push(p); }
   return out;
