@@ -317,12 +317,17 @@ export class Simulation {
       const f = b.forceAcc / substeps;
       b.force += (f - b.force) * k;
       const axialUtil = b.force >= 0 ? b.force / b.maxT : b.maxC > 0 ? -b.force / b.maxC : 0;
-      // The pin-jointed solver does not model beam bending, so road members can otherwise
-      // carry a wheel load without any axial force. Use a gameplay bending proxy for every
-      // contacted road span; shorter spans naturally tolerate more load and bracing helps by
-      // dividing the deck into shorter members. This is a balance approximation, not FEM.
+      // The pin-jointed solver does not model bending. Apply a bending proxy to unsupported
+      // road spans, but leave members integrated into a braced truss to be judged by axial load.
+      // Shorter unsupported spans naturally tolerate more load. This is a game approximation,
+      // not a full beam-bending / finite-element solver.
+      const hasBraceA = !this.nodes[b.a].fixed && this.beams.some((other) =>
+        other !== b && !other.broken && !other.drivable && (other.a === b.a || other.b === b.a));
+      const hasBraceB = !this.nodes[b.b].fixed && this.beams.some((other) =>
+        other !== b && !other.broken && !other.drivable && (other.a === b.b || other.b === b.b));
+      const unsupportedRoadSpan = b.drivable && !hasBraceA && !hasBraceB;
       const bendingCapacity = b.maxT * b.thickness * 3.0;
-      const bendingUtil = b.drivable && bendingCapacity > 0 ? (b.contactLoad * b.len) / (4 * bendingCapacity) : 0;
+      const bendingUtil = unsupportedRoadSpan && bendingCapacity > 0 ? (b.contactLoad * b.len) / (4 * bendingCapacity) : 0;
       b.util = Math.max(axialUtil, bendingUtil);
       if (this.time > PHYSICS.gravityRamp) this.peakUtil = Math.max(this.peakUtil, b.util);
       if (b.util > 1) b.damage += dt / PHYSICS.overloadTime;
