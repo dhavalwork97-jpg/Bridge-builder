@@ -15,7 +15,7 @@ Checklist before submitting:
 - [ ] Re-read the current SDK docs and QA guidelines; confirm the SDK script URL in `vite.config.ts` is still current.
 - [ ] Upload `dist/` as a zip with `index.html` at the root; test in the CrazyGames QA tool (desktop + mobile).
 - [ ] Verify no external requests other than the SDK, mute control works, game is playable offline after load.
-- [ ] Prepare cover images/description (not generated here). Decide on monetisation separately (ads are not implemented).
+- [x] Cover images (1920x1080, 800x1200, 800x800 per the CrazyGames cover rules), screenshots and listing copy are in `store/` (see `store/LISTING.md`). Still to do: a 15-20 s preview video. Decide on monetisation separately (ads are not implemented).
 - [ ] Confirm size/load limits and mobile requirements in the current guidelines.
 
 ## YouTube Playables

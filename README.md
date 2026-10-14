@@ -43,6 +43,7 @@ npm run verify     # typecheck + unit tests + build + asset check
 - [docs/PHYSICS.md](docs/PHYSICS.md) physics model
 - [docs/LEVELS.md](docs/LEVELS.md) level table, star rules, solvability proof
 - [docs/PLATFORMS.md](docs/PLATFORMS.md) platform publishing notes and checklists
+- [store/LISTING.md](store/LISTING.md) store copy, cover images and screenshots
 
 ## Status
 
