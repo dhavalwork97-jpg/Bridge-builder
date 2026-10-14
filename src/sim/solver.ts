@@ -333,6 +333,7 @@ export class Simulation {
       const first = this.beams[i];
       if (!first.drivable || first.broken || visitedRoadBeams.has(i)) continue;
       const component: number[] = [];
+      const componentNodes = new Set<number>();
       const queue = [i];
       visitedRoadBeams.add(i);
       let spanLength = 0;
@@ -340,6 +341,8 @@ export class Simulation {
         const bi = queue.pop()!;
         const road = this.beams[bi];
         component.push(bi);
+        componentNodes.add(road.a);
+        componentNodes.add(road.b);
         spanLength += road.len;
         for (const nodeId of [road.a, road.b]) {
           if (this.nodes[nodeId].fixed || bracedNodes.has(nodeId)) continue;
@@ -350,7 +353,12 @@ export class Simulation {
           }
         }
       }
-      for (const bi of component) unsupportedRoadSpanLengths.set(this.beams[bi].id, spanLength);
+      const hasIntermediateBrace = [...componentNodes].some(
+        (nodeId) => !this.nodes[nodeId].fixed && bracedNodes.has(nodeId),
+      );
+      if (!hasIntermediateBrace) {
+        for (const bi of component) unsupportedRoadSpanLengths.set(this.beams[bi].id, spanLength);
+      }
     }
 
     const k = 1 - Math.exp(-dt / PHYSICS.forceSmoothing);
@@ -363,7 +371,7 @@ export class Simulation {
       // road spans, but leave members integrated into a braced truss to be judged by axial load.
       // Calibrated so a short introductory crossing can survive, while a longer road-only span fails. Shorter unsupported spans naturally tolerate more load. This is a game approximation,
       // not a full beam-bending / finite-element solver.
-      const unsupportedSpanLength = b.drivable ? unsupportedRoadSpanLengths.get(b.id) ?? b.len : 0;
+      const unsupportedSpanLength = b.drivable ? unsupportedRoadSpanLengths.get(b.id) ?? 0 : 0;
       const bendingCapacity = b.maxT * b.thickness * 0.6;
       const bendingUtil = b.drivable && b.contactLoad > 0 && bendingCapacity > 0
         ? (b.contactLoad * unsupportedSpanLength) / (4 * bendingCapacity)
