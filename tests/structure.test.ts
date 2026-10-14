@@ -7,6 +7,7 @@ import { rng } from '../src/math';
 import { PHYSICS } from '../src/config';
 import { buildSolution, deckTruss } from '../src/levels/solutions';
 import { gapLevel } from './fixtures';
+import { LEVELS } from '../src/levels/levels';
 import type { BNode, BBeam } from '../src/types';
 
 const finiteSim = (s: Simulation) =>
@@ -15,6 +16,29 @@ const finiteSim = (s: Simulation) =>
   s.beams.every((b) => Number.isFinite(b.force));
 
 describe('structural solver', () => {
+  it.each(LEVELS.filter((lvl) => lvl.landmasses.length === 2 &&
+    lvl.landmasses[1].top[0].x - lvl.landmasses[0].top.at(-1)!.x > 8.5))(
+    'road-only unsupported crossing breaks under load in L$id ($name)',
+    (lvl) => {
+      const left = lvl.landmasses[0].top.at(-1)!;
+      const right = lvl.landmasses[1].top[0];
+      const span = right.x - left.x;
+      const segments = Math.ceil(span / 7);
+      const nodes: BNode[] = Array.from({ length: segments + 1 }, (_, i) => ({
+        id: i + 1,
+        x: left.x + (span * i) / segments,
+        y: left.y + ((right.y - left.y) * i) / segments,
+        kind: i === 0 || i === segments ? 'anchor' : 'junction',
+        fixed: i === 0 || i === segments,
+      }));
+      const beams: BBeam[] = Array.from({ length: segments }, (_, i) => ({
+        id: i + 1, a: i + 1, b: i + 2, material: 'road',
+      }));
+      const result = runHeadless(lvl, nodes, beams, 60);
+      expect(result.broken, `road-only crossing in L${lvl.id} should break`).toBeGreaterThan(0);
+      expect(result.won, `road-only crossing in L${lvl.id} must not win`).toBe(false);
+    },
+  );
   it('a Tier 1 long road-only crossing breaks under the truck load', () => {
     const lvl = gapLevel({
       vehicle: 'truck',
