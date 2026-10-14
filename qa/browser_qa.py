@@ -42,7 +42,7 @@ try:
         # ---------------- desktop ----------------
         ctx = b.new_context(viewport={'width': 1280, 'height': 720})
         page = ctx.new_page()
-        page.on('console', lambda m: errors.append(m.text) if m.type in ('error', 'warning') and 'GPU stall due to ReadPixels' not in m.text else None)
+        page.on('console', lambda m: errors.append(m.text) if m.type in ('error', 'warning') and 'GPU stall due to ReadPixels' not in mm.text else None)
         page.on('pageerror', lambda e: errors.append('PAGEERROR ' + str(e)))
         page.on('request', lambda r: requests.append(r.url))
         page.goto(f'http://localhost:{PORT}/index.html')
