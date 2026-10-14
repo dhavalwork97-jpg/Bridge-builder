@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#14213d" />
+  <meta name="description" content="BRIDGE BUILDER: BUILD &amp; CROSS - a bridge construction physics puzzle." />
+  <title>BRIDGE BUILDER: BUILD &amp; CROSS</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314213d'/%3E%3Cpath d='M3 21h26M5 21q11-16 22 0' stroke='%23fca311' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <!--PLATFORM_SDK-->
+</head>
+<body>
+  <div id="app">
+    <canvas id="game" aria-label="Bridge construction area" tabindex="-1"></canvas>
+
+    <!-- ===== HUD (gameplay) ===== -->
+    <div id="hud" hidden>
+      <div id="topbar" class="panel row">
+        <button id="btn-menu" class="btn icon" aria-label="Back to level select" title="Levels">&#9776;</button>
+        <div id="level-title" class="title" aria-live="polite"></div>
+        <div id="budget" class="budget" aria-live="polite">
+          <div class="budget-text"><span id="budget-left">$0</span><small id="budget-detail"></small></div>
+          <div class="bar"><i id="budget-bar"></i></div>
+        </div>
+        <button id="btn-stress" class="btn icon" aria-pressed="false" aria-label="Toggle stress view" title="Stress view (S)">&#9685;</button>
+        <button id="btn-sound" class="btn icon" aria-pressed="false" aria-label="Mute / unmute" title="Sound (M)">&#9835;</button>
+      </div>
+
+      <div id="hint" class="hint" role="status" aria-live="polite"></div>
+      <div id="legend" class="legend panel" hidden>
+        <span class="lg-tension"></span> Tension <span class="lg-comp"></span> Compression <small>brighter = closer to breaking</small>
+      </div>
+
+      <div id="toolbar" class="panel">
+        <div id="materials" class="row materials" role="radiogroup" aria-label="Material"></div>
+        <div class="row tools">
+          <button id="btn-undo" class="btn" aria-label="Undo (Z)">&#8630;<span>Undo</span></button>
+          <button id="btn-redo" class="btn" aria-label="Redo (Y)">&#8631;<span>Redo</span></button>
+          <button id="btn-delete" class="btn" aria-label="Delete selected beam (Del)">&#10005;<span>Delete</span></button>
+          <button id="btn-reset" class="btn" aria-label="Reset construction">&#10226;<span>Reset</span></button>
+        </div>
+        <button id="btn-test" class="btn primary big" aria-label="Test bridge (Space)">&#9654; Test Bridge</button>
+      </div>
+
+      <div id="testbar" class="panel row" hidden>
+        <div class="state" id="test-state">TESTING</div>
+        <div class="progress"><i id="progress-bar"></i></div>
+        <button id="btn-pause" class="btn" aria-label="Pause (P)">&#10074;&#10074;</button>
+        <button id="btn-speed" class="btn" aria-label="Simulation speed">1&times;</button>
+        <button id="btn-restart" class="btn" aria-label="Restart test (R)">&#8635;</button>
+        <button id="btn-edit" class="btn primary" aria-label="Back to building (Esc)">&#9998; Edit</button>
+      </div>
+    </div>
+
+    <!-- ===== Screens ===== -->
+    <section id="screen-menu" class="screen" hidden>
+      <div class="menu-card">
+        <div id="logo"></div>
+        <h1>BRIDGE BUILDER<small>BUILD &amp; CROSS</small></h1>
+        <button id="menu-play" class="btn primary big">Play</button>
+        <button id="menu-levels" class="btn big">Levels</button>
+        <button id="menu-settings" class="btn big">Settings</button>
+        <button id="menu-credits" class="btn big">Credits</button>
+        <div id="menu-stars" class="muted"></div>
+      </div>
+    </section>
+
+    <section id="screen-levels" class="screen" hidden>
+      <div class="sheet">
+        <header class="row between"><h2>Select Level</h2><button class="btn" data-back aria-label="Back">&larr; Back</button></header>
+        <div id="level-grid" class="level-grid"></div>
+      </div>
+    </section>
+
+    <section id="screen-settings" class="screen" hidden>
+      <div class="sheet narrow">
+        <header class="row between"><h2>Settings</h2><button class="btn" data-back>&larr; Back</button></header>
+        <label class="switch"><input type="checkbox" id="set-sound" /> <span>Sound effects</span></label>
+        <label class="switch"><input type="checkbox" id="set-stress" /> <span>Stress view by default</span></label>
+        <label class="switch"><input type="checkbox" id="set-motion" /> <span>Reduce particle effects</span></label>
+        <button id="set-reset" class="btn danger">Reset all progress</button>
+        <p class="muted small">Progress is stored locally in your browser only.</p>
+      </div>
+    </section>
+
+    <section id="screen-credits" class="screen" hidden>
+      <div class="sheet narrow">
+        <header class="row between"><h2>Credits</h2><button class="btn" data-back>&larr; Back</button></header>
+        <p><b>BRIDGE BUILDER: BUILD &amp; CROSS</b></p>
+        <p>Every image, vehicle, animation and sound is generated in code at runtime. No external art, audio, font or model files are used.</p>
+        <p class="muted small">Physics: custom XPBD truss solver. Built with TypeScript and Vite.</p>
+      </div>
+    </section>
+
+    <!-- ===== Result & dialogs ===== -->
+    <section id="result" class="screen overlay" hidden>
+      <div class="menu-card" role="dialog" aria-modal="true" aria-labelledby="result-title">
+        <h2 id="result-title"></h2>
+        <div id="result-stars" class="stars" aria-label="Stars earned"></div>
+        <div id="result-detail" class="muted"></div>
+        <ul id="result-objectives" class="objectives"></ul>
+        <button id="res-next" class="btn primary big">Next Level</button>
+        <button id="res-retry" class="btn big">Retry / Improve</button>
+        <button id="res-levels" class="btn big">Level Select</button>
+      </div>
+    </section>
+
+    <section id="confirm" class="screen overlay" hidden>
+      <div class="menu-card" role="alertdialog" aria-modal="true" aria-labelledby="confirm-text">
+        <p id="confirm-text"></p>
+        <div class="row center">
+          <button id="confirm-no" class="btn big">Cancel</button>
+          <button id="confirm-yes" class="btn danger big">Confirm</button>
+        </div>
+      </div>
+    </section>
+
+    <div id="toast" class="toast" role="status" aria-live="assertive" hidden></div>
+    <div id="rotate" class="rotate" hidden>Tip: rotate your device to landscape for more room.<button class="btn" id="rotate-dismiss">OK</button></div>
+    <div id="debug" class="debug" hidden></div>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
