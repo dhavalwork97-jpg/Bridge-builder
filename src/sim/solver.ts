@@ -353,12 +353,11 @@ export class Simulation {
           }
         }
       }
-      const hasIntermediateBrace = [...componentNodes].some(
-        (nodeId) => !this.nodes[nodeId].fixed && bracedNodes.has(nodeId),
-      );
-      if (!hasIntermediateBrace) {
-        for (const bi of component) unsupportedRoadSpanLengths.set(this.beams[bi].id, spanLength);
-      }
+      // Fixed and braced nodes are span boundaries, not proof that the road
+      // between them has bending strength. Since traversal stops at those nodes,
+      // each component is one span between supports; evaluate its bending proxy
+      // even when both endpoints connect to non-road members.
+      for (const bi of component) unsupportedRoadSpanLengths.set(this.beams[bi].id, spanLength);
     }
 
     const k = 1 - Math.exp(-dt / PHYSICS.forceSmoothing);
