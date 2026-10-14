@@ -315,7 +315,8 @@ export class Simulation {
     // several short road pieces. Treat connected road members as one unsupported span
     // until a fixed anchor or a non-road brace supports the junction.
     const roadAdj = new Map<number, number[]>();
-    const bracedNodes = new Set<number>();
+    const nonRoadDegree = new Map<number, number>();
+    const cableSupportedNodes = new Set<number>();
     for (let i = 0; i < this.beams.length; i++) {
       const beam = this.beams[i];
       if (beam.broken) continue;
@@ -323,10 +324,17 @@ export class Simulation {
         roadAdj.set(beam.a, [...(roadAdj.get(beam.a) ?? []), i]);
         roadAdj.set(beam.b, [...(roadAdj.get(beam.b) ?? []), i]);
       } else {
-        bracedNodes.add(beam.a);
-        bracedNodes.add(beam.b);
+        nonRoadDegree.set(beam.a, (nonRoadDegree.get(beam.a) ?? 0) + 1);
+        nonRoadDegree.set(beam.b, (nonRoadDegree.get(beam.b) ?? 0) + 1);
+        if (beam.material === 'cable') {
+          cableSupportedNodes.add(beam.a);
+          cableSupportedNodes.add(beam.b);
+        }
       }
     }
+    // A single support member at a road endpoint does not make the road itself
+    // a truss chord. Two or more non-road members form a genuine braced joint;
+    // a cable stay also counts as support because it can carry tensile load.
     const unsupportedRoadSpanLengths = new Map<number, number>();
     const visitedRoadBeams = new Set<number>();
     for (let i = 0; i < this.beams.length; i++) {
@@ -353,11 +361,16 @@ export class Simulation {
           }
         }
       }
-      // Fixed and braced nodes are span boundaries, not proof that the road
-      // between them has bending strength. Since traversal stops at those nodes,
-      // each component is one span between supports; evaluate its bending proxy
-      // even when both endpoints connect to non-road members.
-      for (const bi of component) unsupportedRoadSpanLengths.set(this.beams[bi].id, spanLength);
+      // Ignore bending only when the road component actually joins a truss
+      // joint (multiple structural members) or a cable stay. A lone support at
+      // each endpoint still leaves the road span itself vulnerable to bending.
+      const hasIntermediateBrace = [...componentNodes].some((nodeId) =>
+        !this.nodes[nodeId].fixed &&
+        ((nonRoadDegree.get(nodeId) ?? 0) >= 2 || cableSupportedNodes.has(nodeId)),
+      );
+      if (!hasIntermediateBrace) {
+        for (const bi of component) unsupportedRoadSpanLengths.set(this.beams[bi].id, spanLength);
+      }
     }
 
     const k = 1 - Math.exp(-dt / PHYSICS.forceSmoothing);
