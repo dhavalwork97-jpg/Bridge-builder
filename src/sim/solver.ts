@@ -315,6 +315,7 @@ export class Simulation {
     // several short road pieces. Treat connected road members as one unsupported span
     // until a fixed anchor or a non-road brace supports the junction.
     const roadAdj = new Map<number, number[]>();
+    const bracedNodes = new Set<number>();
     const nonRoadDegree = new Map<number, number>();
     const cableSupportedNodes = new Set<number>();
     for (let i = 0; i < this.beams.length; i++) {
@@ -324,6 +325,8 @@ export class Simulation {
         roadAdj.set(beam.a, [...(roadAdj.get(beam.a) ?? []), i]);
         roadAdj.set(beam.b, [...(roadAdj.get(beam.b) ?? []), i]);
       } else {
+        bracedNodes.add(beam.a);
+        bracedNodes.add(beam.b);
         nonRoadDegree.set(beam.a, (nonRoadDegree.get(beam.a) ?? 0) + 1);
         nonRoadDegree.set(beam.b, (nonRoadDegree.get(beam.b) ?? 0) + 1);
         if (beam.material === 'cable') {
