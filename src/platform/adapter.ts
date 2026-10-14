@@ -8,7 +8,7 @@
  *    game.gameplayStart/Stop, game.settings.muteAudio + addSettingsChangeListener)
  *  - YouTube Playables SDK: https://developers.google.com/youtube/gaming/playables/  (ytgame.game.firstFrameReady,
  *    ytgame.game.gameReady, ytgame.system.onPause/onResume, ytgame.system.isAudioEnabled/onAudioEnabledChange,
- *    ytgame.engagement.sendScore)
+ *    ytgame.engagement.sendScore, ytgame.game.saveData/loadData)
  */
 declare const __PLATFORM__: string;
 
@@ -25,6 +25,12 @@ export interface PlatformAdapter {
   gameplayStart(): void;
   gameplayStop(): void;
   reportScore(totalStars: number): void;
+  /** True when the platform requires progress to be saved through its own API (not localStorage). */
+  readonly usesPlatformSave: boolean;
+  /** Raw saved string from the platform, or null when none / unavailable. */
+  loadSave(): Promise<string | null>;
+  /** Save a string through the platform. Never throws. */
+  writeSave(data: string): void;
 }
 
 const safe = (fn: () => void): void => { try { fn(); } catch { /* SDK errors must never break gameplay */ } };
@@ -32,6 +38,9 @@ const safe = (fn: () => void): void => { try { fn(); } catch { /* SDK errors mus
 export class LocalAdapter implements PlatformAdapter {
   readonly name = 'local' as const;
   sdkReady = false;
+  readonly usesPlatformSave = false;
+  async loadSave(): Promise<string | null> { return null; }
+  writeSave(): void {}
   async init(): Promise<void> { /* nothing */ }
   loadingStart(): void {}
   loadingStop(): void {}
@@ -45,6 +54,9 @@ export class LocalAdapter implements PlatformAdapter {
 export class CrazyGamesAdapter implements PlatformAdapter {
   readonly name = 'crazygames' as const;
   sdkReady = false;
+  readonly usesPlatformSave = false;
+  async loadSave(): Promise<string | null> { return null; }
+  writeSave(): void {}
   private playing = false;
   constructor(private win: any = globalThis) {}
   private get sdk(): any { return this.sdkReady ? this.win.CrazyGames?.SDK : undefined; }
@@ -72,6 +84,17 @@ export class CrazyGamesAdapter implements PlatformAdapter {
 export class YouTubeAdapter implements PlatformAdapter {
   readonly name = 'youtube' as const;
   sdkReady = false;
+  /** Playables certification: progress must be saved only via saveData/loadData (no localStorage/cookies). */
+  readonly usesPlatformSave = true;
+  async loadSave(): Promise<string | null> {
+    try {
+      const fn = this.yt?.game?.loadData;
+      if (typeof fn !== 'function') return null;
+      const v = await fn.call(this.yt.game);
+      return typeof v === 'string' && v.length > 0 ? v : null;
+    } catch { return null; }
+  }
+  writeSave(data: string): void { safe(() => { void Promise.resolve(this.yt?.game?.saveData?.(data)).catch(() => {}); }); }
   constructor(private win: any = globalThis) {}
   private get yt(): any { return this.sdkReady ? this.win.ytgame : undefined; }
   async init(hooks: PlatformHooks): Promise<void> {

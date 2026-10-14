@@ -45,9 +45,28 @@ export interface StorageLike { getItem(k: string): string | null; setItem(k: str
 export class SaveStore {
   data: SaveData;
   private storage: StorageLike | null;
+  /** Platform-owned persistence (e.g. YouTube Playables saveData). Writes are held until `hydrate` has run. */
+  private external: ((json: string) => void) | null = null;
+  private hydrated = false;
   constructor(private levelCount: number, storage?: StorageLike | null) {
     this.storage = storage === undefined ? SaveStore.detect() : storage;
     this.data = this.load();
+  }
+  /** Route persistence to a platform save API instead of localStorage. Nothing is written until `hydrate`. */
+  useExternal(write: (json: string) => void): void { this.external = write; this.storage = null; }
+  /**
+   * Load progress from the platform (the raw string, or null if none). Merges with anything earned
+   * before the load finished (best stars / lowest cost win), then enables writes.
+   */
+  hydrate(json: string | null): void {
+    let loaded = defaultSave();
+    try { if (json) loaded = sanitize(JSON.parse(json), this.levelCount); } catch { /* corrupt: start fresh */ }
+    for (const [k, r] of Object.entries(this.data.levels)) {
+      const prev = loaded.levels[k];
+      if (!prev || r.stars > prev.stars || (r.stars === prev.stars && r.bestCost < prev.bestCost)) loaded.levels[k] = r;
+    }
+    this.data = loaded;
+    this.hydrated = true;
   }
   private static detect(): StorageLike | null {
     try { return typeof localStorage === 'undefined' ? null : localStorage; } catch { return null; }
@@ -60,6 +79,11 @@ export class SaveStore {
     } catch { return defaultSave(); }
   }
   persist(): void {
+    if (this.external) {
+      if (!this.hydrated) return; // the platform requires loadData to finish before saveData
+      try { this.external(JSON.stringify(this.data)); } catch { /* keep in memory */ }
+      return;
+    }
     try { this.storage?.setItem(this.key, JSON.stringify(this.data)); } catch { /* quota / privacy mode: keep in memory */ }
   }
   record(levelId: number): LevelRecord | undefined { return this.data.levels[String(levelId)]; }

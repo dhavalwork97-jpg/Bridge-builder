@@ -52,4 +52,27 @@ describe('save / progression', () => {
     none.submit(1, 1, 5);
     expect(none.completed(1)).toBe(true);
   });
+
+  it('platform-owned save: no localStorage use, writes held until hydrate, merges early progress', () => {
+    const st = mem();
+    const writes: string[] = [];
+    const s = new SaveStore(LEVELS.length, null);
+    s.useExternal((j) => writes.push(j));
+    s.submit(1, 1, 900);                 // earned before the platform load finished
+    expect(writes).toEqual([]);          // saveData must not run before loadData completes
+    s.hydrate(JSON.stringify({ version: s.data.version, levels: { '1': { stars: 2, bestCost: 700 }, '2': { stars: 1, bestCost: 500 } }, settings: { muted: false, stressView: true, reduceMotion: false } }));
+    expect(s.record(1)).toEqual({ stars: 2, bestCost: 700 });
+    expect(s.totalStars()).toBe(3);
+    expect(s.data.settings.stressView).toBe(true);
+    s.submit(3, 1, 400);
+    expect(writes.length).toBe(1);
+    expect(JSON.parse(writes[0]).levels['3']).toEqual({ stars: 1, bestCost: 400 });
+    expect(st.map.size).toBe(0);
+  });
+  it('platform-owned save tolerates missing or corrupt data', () => {
+    const s = new SaveStore(LEVELS.length, null);
+    s.useExternal(() => {});
+    s.hydrate('{not json');
+    expect(s.totalStars()).toBe(0);
+  });
 });

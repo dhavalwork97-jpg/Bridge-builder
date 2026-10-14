@@ -32,9 +32,10 @@ export class Game {
   private canvas = $<HTMLCanvasElement>('game');
   private ctx = this.canvas.getContext('2d')!;
   private cam = new Camera();
-  private store = new SaveStore(LEVELS.length);
-  private synth = new Synth();
   private adapter: PlatformAdapter = createAdapter();
+  // Platforms that own persistence (YouTube Playables) must not touch localStorage.
+  private store = new SaveStore(LEVELS.length, this.adapter.usesPlatformSave ? null : undefined);
+  private synth = new Synth();
   private particles = new Particles();
   private stepper = new FixedStepper();
 
@@ -90,19 +91,33 @@ export class Game {
     this.synth.setMuted(s.muted);
     this.stressView = s.stressView;
     this.particles.reduced = s.reduceMotion;
-    void this.adapter.init({
+    const platformReady = this.adapter.init({
       onPause: () => this.autoPause(),
       onResume: () => { /* player resumes manually */ },
       onMuteChange: (m) => { this.synth.setMuted(m); this.syncSettingsUi(); },
-    });
+    }).then(() => this.hydratePlatformSave());
     this.buildStaticUi();
     this.bindEvents();
     this.loadDemo();
     this.setLevelContext(LEVELS[11], false);
     this.showScreen('menu');
     this.layout();
-    this.adapter.loadingStop();
+    if (this.adapter.usesPlatformSave) void platformReady.then(() => this.adapter.loadingStop());
+    else this.adapter.loadingStop();
     requestAnimationFrame((t) => { this.last = t; this.adapter.firstFrameReady(); this.frame(t); });
+  }
+
+  /** Load progress from the platform's own save API (Playables), then refresh whatever is on screen. */
+  private async hydratePlatformSave(): Promise<void> {
+    if (!this.adapter.usesPlatformSave) return;
+    this.store.useExternal((j) => this.adapter.writeSave(j));
+    this.store.hydrate(this.adapter.sdkReady ? await this.adapter.loadSave() : null);
+    const s = this.store.data.settings;
+    this.stressView = s.stressView;
+    this.particles.reduced = s.reduceMotion;
+    this.syncSettingsUi();
+    if (this.screen === 'menu') $('menu-stars').textContent = `\u2605 ${this.store.totalStars()} / ${LEVELS.length * 3}`;
+    if (this.screen === 'levels') this.renderLevelGrid();
   }
 
   private buildStaticUi(): void {

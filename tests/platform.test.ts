@@ -58,4 +58,20 @@ describe('platform adapters', () => {
     expect(yt.engagement.sendScore).toHaveBeenCalledWith({ value: 12 });
     expect(h.calls).toEqual(['mute:true', 'pause', 'resume']);
   });
+
+  it('YouTube adapter saves/loads through ytgame.game and tolerates failures', async () => {
+    const saveData = vi.fn(async () => {});
+    const a = new YouTubeAdapter({ ytgame: { game: { saveData, loadData: async () => '{"x":1}' } } });
+    await a.init(hooks());
+    expect(a.usesPlatformSave).toBe(true);
+    expect(await a.loadSave()).toBe('{"x":1}');
+    a.writeSave('abc');
+    expect(saveData).toHaveBeenCalledWith('abc');
+    const bad = new YouTubeAdapter({ ytgame: { game: { loadData: async () => { throw new Error('x'); }, saveData: () => { throw new Error('y'); } } } });
+    await bad.init(hooks());
+    expect(await bad.loadSave()).toBeNull();
+    expect(() => bad.writeSave('z')).not.toThrow();
+    const none = new YouTubeAdapter({});
+    expect(await none.loadSave()).toBeNull();
+  });
 });
