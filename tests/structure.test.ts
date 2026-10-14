@@ -33,6 +33,31 @@ describe('structural solver', () => {
     expect(result.won).toBe(false);
     expect(result.sim.events.some((event) => event.type === 'break')).toBe(true);
   });
+  it('a long road deck span between movable supported joints can fail under wheel load', () => {
+    const lvl = gapLevel({
+      vehicle: 'dumper',
+      anchors: [{ x: 0, y: -3 }, { x: 6, y: -3 }],
+      landmasses: [
+        { top: [{ x: -14, y: 0 }, { x: 0, y: 0 }] },
+        { top: [{ x: 6, y: 0 }, { x: 26, y: 0 }] },
+      ],
+    });
+    const nodes: BNode[] = [
+      { id: 1, x: 0, y: -3, kind: 'anchor', fixed: true },
+      { id: 2, x: 6, y: -3, kind: 'anchor', fixed: true },
+      { id: 3, x: 0, y: 0, kind: 'junction', fixed: false },
+      { id: 4, x: 6, y: 0, kind: 'junction', fixed: false },
+    ];
+    const beams: BBeam[] = [
+      { id: 1, a: 3, b: 4, material: 'road' },
+      { id: 2, a: 1, b: 3, material: 'steel' },
+      { id: 3, a: 2, b: 4, material: 'steel' },
+    ];
+    const result = runHeadless(lvl, nodes, beams, 40);
+    expect(result.broken).toBeGreaterThan(0);
+    expect(result.won).toBe(false);
+    expect(result.sim.events.some((event) => event.type === 'break')).toBe(true);
+  });
   it('a braced truss carries the test vehicle without breakage', () => {
     const lvl = gapLevel();
     const { graph, errors } = buildSolution(lvl, deckTruss(0, 0, 12, 0, 3, 3, { chord: 'steel', vert: 'steel', diag: 'steel' }));
