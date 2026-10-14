@@ -369,7 +369,8 @@ export class Simulation {
       // each endpoint still leaves the road span itself vulnerable to bending.
       const hasIntermediateBrace = [...componentNodes].some((nodeId) =>
         !this.nodes[nodeId].fixed &&
-        ((nonRoadDegree.get(nodeId) ?? 0) >= 2 || cableSupportedNodes.has(nodeId)),
+        ((roadAdj.get(nodeId) ?? []).length >= 2 &&
+          (nonRoadDegree.get(nodeId) ?? 0) >= 1 || cableSupportedNodes.has(nodeId)),
       );
       if (!hasIntermediateBrace) {
         for (const bi of component) unsupportedRoadSpanLengths.set(this.beams[bi].id, spanLength);
