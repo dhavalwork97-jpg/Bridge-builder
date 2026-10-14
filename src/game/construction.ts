@@ -1,6 +1,6 @@
 import { BUILD } from '../config';
 import type { MaterialId, Vec2 } from '../types';
-import type { Camera } from './camera';
+import type { CameraLike } from './stagecamera';
 import { BridgeGraph, type RejectReason } from '../sim/graph';
 
 export interface Preview {
@@ -36,7 +36,7 @@ export class ConstructionController {
   private tapBeam: { pointerId: number; beamId: number } | null = null;
   private hoverPx: Vec2 | null = null;
 
-  constructor(private graph: BridgeGraph, private cam: Camera, private ev: ConstructionEvents) {}
+  constructor(private graph: BridgeGraph, private cam: CameraLike, private ev: ConstructionEvents) {}
 
   setGraph(g: BridgeGraph): void { this.graph = g; this.reset(); }
   reset(): void { this.pendingFrom = null; this.selectedBeam = null; this.drag = null; this.tapBeam = null; this.hoverPx = null; }

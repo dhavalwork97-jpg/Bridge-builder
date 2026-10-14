@@ -3,15 +3,15 @@ import { LEVELS } from '../levels/levels';
 import { SOLUTIONS, buildSolution } from '../levels/solutions';
 import { Synth } from '../audio/synth';
 import { createAdapter, type PlatformAdapter } from '../platform/adapter';
-import { drawBeam, drawNode, drawVehicle, type DrawBeam } from '../render/entities';
+import { drawBeamHighlight, drawNodeRing, type DrawBeam } from '../render/entities';
 import { Particles } from '../render/particles';
-import { Scenery } from '../render/scenery';
+import { Stage3D, type StageNode } from '../render/stage3d';
 import { analyzeStructure } from '../sim/analysis';
 import { BridgeGraph, REJECT_TEXT, type RejectReason } from '../sim/graph';
 import { Simulation } from '../sim/solver';
 import { groundHeightAt, isInsideTerrain } from '../sim/terrain';
 import type { LevelDef, MaterialId } from '../types';
-import { Camera } from './camera';
+import { StageCamera } from './stagecamera';
 import { ConstructionController } from './construction';
 import { FixedStepper } from './loop';
 import { SaveStore } from './save';
@@ -31,7 +31,8 @@ const STAR_PATH = 'M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.
 export class Game {
   private canvas = $<HTMLCanvasElement>('game');
   private ctx = this.canvas.getContext('2d')!;
-  private cam = new Camera();
+  private cam = new StageCamera();
+  private stage = new Stage3D($<HTMLCanvasElement>('gl'));
   private adapter: PlatformAdapter = createAdapter();
   // Platforms that own persistence (YouTube Playables) must not touch localStorage.
   private store = new SaveStore(LEVELS.length, this.adapter.usesPlatformSave ? null : undefined);
@@ -44,7 +45,6 @@ export class Game {
   private level: LevelDef = LEVELS[0];
   private graph = new BridgeGraph(LEVELS[0]);
   private ctrl: ConstructionController;
-  private scenery: Scenery = new Scenery(LEVELS[0]);
   private idle!: Simulation;       // supplies the parked vehicle pose in build mode
   private sim: Simulation | null = null;
   private demo: Simulation | null = null;
@@ -269,7 +269,7 @@ export class Game {
   private setLevelContext(level: LevelDef, withGraph: boolean): void {
     this.level = level;
     if (withGraph) { this.graph = new BridgeGraph(level); this.ctrl.setGraph(this.graph); }
-    this.scenery = new Scenery(level);
+    this.stage.setLevel(level);
     this.idle = new Simulation(level, [], []);
   }
 
@@ -459,7 +459,7 @@ export class Game {
     const ba = this.level.buildArea;
     const W = this.level.goalX - 6;
     this.cam.fit({ minX: -8, maxX: W + 8.5, minY: Math.min(ba.minY, PHYSICS.waterY - 2), maxY: ba.maxY + 1 }, this.w, this.h, { top: topH, bottom: botH, left: 6, right: 6 });
-    this.scenery.build(this.cam, this.w, this.h, this.dpr);
+    this.stage.resize(this.w, this.h, this.dpr);
     this.updateRotateHint();
   }
 
@@ -539,25 +539,24 @@ export class Game {
     const c = this.ctx, w = this.w, h = this.h;
     c.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     c.clearRect(0, 0, w, h);
-    this.scenery.drawBack(c, w, h, this.time);
-    c.save();
-    if (this.shake > 0) c.translate((Math.random() - 0.5) * this.shake * 10, (Math.random() - 0.5) * this.shake * 10);
-    this.scenery.drawFore(c, w, h);
-    this.scenery.drawWater(c, this.cam, w, h, this.time);
-    this.scenery.drawFlag(c, this.cam, this.time);
+    if (this.shake > 0) this.cam.setShake((Math.random() - 0.5) * this.shake * 10, (Math.random() - 0.5) * this.shake * 10);
+    else this.cam.setShake(0, 0);
 
     const sim = this.screen === 'play' ? this.sim : this.demo;
     const building = this.screen === 'play' && this.mode === 'build';
-    if (building) this.drawGrid(c);
-    this.drawStructure(c, sim, building);
+    this.updateStage(sim, building);
     const vs = sim ?? this.idle;
-    drawVehicle(c, this.cam, vs.vehicle, {
+    this.stage.setVehicle(this.vehicleDef(), {
       x: (vs.wheels[0].x + vs.wheels[1].x) / 2, y: (vs.wheels[0].y + vs.wheels[1].y) / 2,
       angle: vs.vehicleAngle, bodyOffset: vs.bodyOffset, spinRear: vs.wheels[0].spin, spinFront: vs.wheels[1].spin,
-    }, vs.vehicle.id);
+    });
+    this.stage.render(this.cam, this.time);
+
+    // 2D overlay: build grid, hover/selection feedback, particles, placement preview
+    if (building) this.drawGrid(c);
+    if (building) this.drawBuildFeedback(c);
     this.particles.draw(c, this.cam);
     if (building) this.drawPreview(c);
-    c.restore();
   }
 
   private drawGrid(c: CanvasRenderingContext2D): void {
@@ -572,9 +571,10 @@ export class Game {
     }
   }
 
-  private drawStructure(c: CanvasRenderingContext2D, sim: Simulation | null, building: boolean): void {
-    const cam = this.cam;
+  /** Push the current structure (live simulation, demo, or the player's design) to the 3D stage. */
+  private updateStage(sim: Simulation | null, building: boolean): void {
     let n = 0;
+    const nodes: StageNode[] = [];
     const slot = (): DrawBeam => this.beamPool[n] ?? (this.beamPool[n] = { ax: 0, ay: 0, bx: 0, by: 0, material: 'road', util: 0, force: 0, rest: 1, len: 1 });
     if (sim && !building) {
       const used = new Set<number>();
@@ -584,21 +584,32 @@ export class Game {
         d.ax = A.x; d.ay = A.y; d.bx = B.x; d.by = B.y; d.material = b.material; d.util = b.util; d.force = b.force; d.rest = b.rest; d.len = b.len; d.selected = false; d.broken = false;
         n++; used.add(b.a); used.add(b.b);
       }
-      for (let i = 0; i < n; i++) drawBeam(c, cam, this.beamPool[i], this.screen === 'play' && this.stressView, this.time);
-      sim.nodes.forEach((nd, i) => { if (nd.fixed || used.has(i)) drawNode(c, cam, nd.x, nd.y, nd.fixed ? 'anchor' : 'junction', 'idle', this.time); });
-      return;
+      sim.nodes.forEach((nd, i) => { if (nd.fixed || used.has(i)) nodes.push({ x: nd.x, y: nd.y, kind: nd.fixed ? 'anchor' : 'junction' }); });
+    } else {
+      for (const b of this.graph.beams) {
+        const A = this.graph.node(b.a), B = this.graph.node(b.b);
+        if (!A || !B) continue;
+        const d = slot();
+        const L = Math.hypot(B.x - A.x, B.y - A.y);
+        d.ax = A.x; d.ay = A.y; d.bx = B.x; d.by = B.y; d.material = b.material; d.util = 0; d.force = 0; d.rest = L; d.len = L; d.selected = this.ctrl.selectedBeam === b.id; d.broken = false;
+        n++;
+      }
+      for (const nd of this.graph.nodes) nodes.push({ x: nd.x, y: nd.y, kind: nd.kind });
     }
-    for (const b of this.graph.beams) {
-      const A = this.graph.node(b.a), B = this.graph.node(b.b);
-      if (!A || !B) continue;
-      const d = slot();
-      d.ax = A.x; d.ay = A.y; d.bx = B.x; d.by = B.y; d.material = b.material; d.util = 0; d.force = 0; const L = Math.hypot(B.x - A.x, B.y - A.y); d.rest = L; d.len = L; d.selected = this.ctrl.selectedBeam === b.id; d.broken = false;
-      n++;
+    this.stage.setStructure(this.beamPool, n, nodes, !building && this.screen === 'play' && this.stressView, this.time);
+    this.drawnBeams = n;
+  }
+  private drawnBeams = 0;
+
+  /** Selection highlight and node hover/pending rings (build mode only). */
+  private drawBuildFeedback(c: CanvasRenderingContext2D): void {
+    for (let i = 0; i < this.drawnBeams; i++) {
+      const b = this.beamPool[i];
+      if (b.selected) drawBeamHighlight(c, this.cam, b, MATERIALS[b.material].thickness);
     }
-    for (let i = 0; i < n; i++) drawBeam(c, cam, this.beamPool[i], false, this.time);
     for (const nd of this.graph.nodes) {
-      const st = this.ctrl.pendingFrom === nd.id ? 'pending' : this.hoverNodeId === nd.id ? 'hover' : 'idle';
-      drawNode(c, cam, nd.x, nd.y, nd.kind, st, this.time);
+      const st = this.ctrl.pendingFrom === nd.id ? 'pending' : this.hoverNodeId === nd.id ? 'hover' : null;
+      if (st) drawNodeRing(c, this.cam, nd.x, nd.y, nd.kind, st, this.time);
     }
   }
 

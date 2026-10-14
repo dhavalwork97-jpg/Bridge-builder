@@ -18,8 +18,8 @@ bad.forEach((f) => fail(`unexpected non-code file in build: ${f}`));
 for (const f of files) {
   const txt = readFileSync(f, 'utf8');
   const urls = txt.match(/https?:\/\/[^\s"'`)<>]+/g) ?? [];
-  // allow w3.org namespace strings used by SVG/DOM APIs
-  const remote = urls.filter((u) => !/^https?:\/\/(www\.w3\.org|vitejs\.dev|reactjs\.org)/.test(u));
+  // allow w3.org namespace strings used by SVG/DOM APIs, and JCGT/academic references in Three.js
+  const remote = urls.filter((u) => !/^https?:\/\/(www\.w3\.org|vitejs\.dev|reactjs\.org|jcgt\.org)/.test(u));
   if (remote.length) fail(`${f}: remote URLs: ${[...new Set(remote)].join(', ')}`);
 }
 // 2) source: no fetch/XHR/image/audio files referenced

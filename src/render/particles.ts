@@ -1,4 +1,4 @@
-import type { Camera } from '../game/camera';
+import type { CameraLike } from '../game/stagecamera';
 import type { MaterialId } from '../types';
 import { MATERIALS } from '../config';
 
@@ -55,7 +55,7 @@ export class Particles {
     this.debris = this.debris.filter((d) => d.life < 3.5 && d.y > -25);
   }
 
-  draw(c: CanvasRenderingContext2D, cam: Camera): void {
+  draw(c: CanvasRenderingContext2D, cam: CameraLike): void {
     for (const d of this.debris) {
       const p = cam.worldToScreen(d);
       c.save(); c.translate(p.x, p.y); c.rotate(d.rot); c.globalAlpha = Math.max(0, 1 - d.life / 3.5);
