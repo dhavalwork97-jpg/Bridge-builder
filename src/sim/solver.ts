@@ -321,10 +321,16 @@ export class Simulation {
       // road spans, but leave members integrated into a braced truss to be judged by axial load.
       // Shorter unsupported spans naturally tolerate more load. This is a game approximation,
       // not a full beam-bending / finite-element solver.
-      const hasBraceA = !this.nodes[b.a].fixed && this.beams.some((other) =>
-        other !== b && !other.broken && !other.drivable && (other.a === b.a || other.b === b.a));
-      const hasBraceB = !this.nodes[b.b].fixed && this.beams.some((other) =>
-        other !== b && !other.broken && !other.drivable && (other.a === b.b || other.b === b.b));
+      const hasBraceA = !this.nodes[b.a].fixed && this.beams.some((other) => {
+        if (other === b || other.broken || other.drivable) return false;
+        const oppositeId = other.a === b.a ? other.b : other.b === b.a ? other.a : -1;
+        return oppositeId >= 0 && !this.nodes[oppositeId].fixed;
+      });
+      const hasBraceB = !this.nodes[b.b].fixed && this.beams.some((other) => {
+        if (other === b || other.broken || other.drivable) return false;
+        const oppositeId = other.a === b.b ? other.b : other.b === b.b ? other.a : -1;
+        return oppositeId >= 0 && !this.nodes[oppositeId].fixed;
+      });
       const unsupportedRoadSpan = b.drivable && !hasBraceA && !hasBraceB;
       const bendingCapacity = b.maxT * b.thickness * 3.0;
       const bendingUtil = unsupportedRoadSpan && bendingCapacity > 0 ? (b.contactLoad * b.len) / (4 * bendingCapacity) : 0;
