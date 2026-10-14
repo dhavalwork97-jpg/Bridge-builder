@@ -311,6 +311,48 @@ export class Simulation {
     for (const w of this.wheels) if (!isFiniteNum(w.x) || !isFiniteNum(w.y)) { this.numericError = true; }
     if (this.numericError) { this.fail('numeric'); return; }
 
+    // Road-only runs must not evade bending failure by splitting a long deck into
+    // several short road pieces. Treat connected road members as one unsupported span
+    // until a fixed anchor or a non-road brace supports the junction.
+    const roadAdj = new Map<number, number[]>();
+    const bracedNodes = new Set<number>();
+    for (let i = 0; i < this.beams.length; i++) {
+      const beam = this.beams[i];
+      if (beam.broken) continue;
+      if (beam.drivable) {
+        roadAdj.set(beam.a, [...(roadAdj.get(beam.a) ?? []), i]);
+        roadAdj.set(beam.b, [...(roadAdj.get(beam.b) ?? []), i]);
+      } else {
+        bracedNodes.add(beam.a);
+        bracedNodes.add(beam.b);
+      }
+    }
+    const unsupportedRoadSpanLengths = new Map<number, number>();
+    const visitedRoadBeams = new Set<number>();
+    for (let i = 0; i < this.beams.length; i++) {
+      const first = this.beams[i];
+      if (!first.drivable || first.broken || visitedRoadBeams.has(i)) continue;
+      const component: number[] = [];
+      const queue = [i];
+      visitedRoadBeams.add(i);
+      let spanLength = 0;
+      while (queue.length) {
+        const bi = queue.pop()!;
+        const road = this.beams[bi];
+        component.push(bi);
+        spanLength += road.len;
+        for (const nodeId of [road.a, road.b]) {
+          if (this.nodes[nodeId].fixed || bracedNodes.has(nodeId)) continue;
+          for (const next of roadAdj.get(nodeId) ?? []) {
+            if (visitedRoadBeams.has(next)) continue;
+            visitedRoadBeams.add(next);
+            queue.push(next);
+          }
+        }
+      }
+      for (const bi of component) unsupportedRoadSpanLengths.set(this.beams[bi].id, spanLength);
+    }
+
     const k = 1 - Math.exp(-dt / PHYSICS.forceSmoothing);
     for (const b of this.beams) {
       if (b.broken) continue;
@@ -321,19 +363,11 @@ export class Simulation {
       // road spans, but leave members integrated into a braced truss to be judged by axial load.
       // Calibrated so a short introductory crossing can survive, while a longer road-only span fails. Shorter unsupported spans naturally tolerate more load. This is a game approximation,
       // not a full beam-bending / finite-element solver.
-      const hasBraceA = !this.nodes[b.a].fixed && this.beams.some((other) => {
-        if (other === b || other.broken || other.drivable) return false;
-        const oppositeId = other.a === b.a ? other.b : other.b === b.a ? other.a : -1;
-        return oppositeId >= 0 && !this.nodes[oppositeId].fixed;
-      });
-      const hasBraceB = !this.nodes[b.b].fixed && this.beams.some((other) => {
-        if (other === b || other.broken || other.drivable) return false;
-        const oppositeId = other.a === b.b ? other.b : other.b === b.b ? other.a : -1;
-        return oppositeId >= 0 && !this.nodes[oppositeId].fixed;
-      });
-      const unsupportedRoadSpan = b.drivable && !hasBraceA && !hasBraceB;
+      const unsupportedSpanLength = b.drivable ? unsupportedRoadSpanLengths.get(b.id) ?? b.len : 0;
       const bendingCapacity = b.maxT * b.thickness * 0.6;
-      const bendingUtil = unsupportedRoadSpan && bendingCapacity > 0 ? (b.contactLoad * b.len) / (4 * bendingCapacity) : 0;
+      const bendingUtil = b.drivable && b.contactLoad > 0 && bendingCapacity > 0
+        ? (b.contactLoad * unsupportedSpanLength) / (4 * bendingCapacity)
+        : 0;
       b.util = Math.max(axialUtil, bendingUtil);
       if (this.time > PHYSICS.gravityRamp) this.peakUtil = Math.max(this.peakUtil, b.util);
       if (b.util > 1) b.damage += dt / PHYSICS.overloadTime;
