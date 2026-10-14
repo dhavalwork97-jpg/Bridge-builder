@@ -17,10 +17,10 @@ const finiteSim = (s: Simulation) =>
 
 describe('structural solver', () => {
   it.each(LEVELS.filter((lvl) => lvl.landmasses.length === 2 &&
-    lvl.landmasses[1].top[0].x - lvl.landmasses[0].top.at(-1)!.x > 8.5))(
+    lvl.landmasses[1].top[0].x - lvl.landmasses[0].top[lvl.landmasses[0].top.length - 1]!.x > 8.5))(
     'road-only unsupported crossing breaks under load in L$id ($name)',
     (lvl) => {
-      const left = lvl.landmasses[0].top.at(-1)!;
+      const left = lvl.landmasses[0].top[lvl.landmasses[0].top.length - 1]!;
       const right = lvl.landmasses[1].top[0];
       const span = right.x - left.x;
       const segments = Math.ceil(span / 7);
