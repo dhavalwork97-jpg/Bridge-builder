@@ -16,7 +16,14 @@ const finiteSim = (s: Simulation) =>
 
 describe('structural solver', () => {
   it('an unsupported road span between fixed anchors can fail under a heavy vehicle', () => {
-    const lvl = gapLevel({ vehicle: 'dumper' });
+    const lvl = gapLevel({
+      vehicle: 'dumper',
+      anchors: [{ x: 0, y: 0 }, { x: 6, y: 0 }, { x: 0, y: -3 }, { x: 6, y: -3 }],
+      landmasses: [
+        { top: [{ x: -14, y: 0 }, { x: 0, y: 0 }] },
+        { top: [{ x: 6, y: 0 }, { x: 26, y: 0 }] },
+      ],
+    });
     const graph = new BridgeGraph(lvl);
     const [left, right] = graph.nodes;
     expect(graph.connect(left.id, { nodeId: right.id }, 'road').ok).toBe(true);
