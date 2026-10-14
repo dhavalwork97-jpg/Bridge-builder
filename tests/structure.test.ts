@@ -15,6 +15,17 @@ const finiteSim = (s: Simulation) =>
   s.beams.every((b) => Number.isFinite(b.force));
 
 describe('structural solver', () => {
+  it('an unsupported road span between fixed anchors can fail under a heavy vehicle', () => {
+    const lvl = gapLevel({ vehicle: 'dumper' });
+    const graph = new BridgeGraph(lvl);
+    const [left, right] = graph.nodes;
+    expect(graph.connect(left.id, { nodeId: right.id }, 'road').ok).toBe(true);
+
+    const result = runHeadless(lvl, graph.nodes, graph.beams, 40);
+    expect(result.broken).toBeGreaterThan(0);
+    expect(result.won).toBe(false);
+    expect(result.sim.events.some((event) => event.type === 'break')).toBe(true);
+  });
   it('a braced truss carries the test vehicle without breakage', () => {
     const lvl = gapLevel();
     const { graph, errors } = buildSolution(lvl, deckTruss(0, 0, 12, 0, 3, 3, { chord: 'steel', vert: 'steel', diag: 'steel' }));
