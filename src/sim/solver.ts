@@ -360,7 +360,7 @@ export class Simulation {
       // Shorter unsupported spans naturally tolerate more load. This is a game approximation,
       // not a full beam-bending / finite-element solver.
       const spanLength = b.drivable ? spanLengths.get(b.id) ?? 0 : 0;
-      const bendingCapacity = b.maxT * b.thickness * 0.6;
+      const bendingCapacity = b.maxT * b.thickness * 0.7;
       const bendingUtil = b.drivable && b.contactLoad > 0 && bendingCapacity > 0
         ? (b.contactLoad * spanLength) / (4 * bendingCapacity) : 0;
       b.util = Math.max(axialUtil, bendingUtil);
