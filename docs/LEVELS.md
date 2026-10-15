@@ -1,7 +1,7 @@
 # Levels
 
-20 levels, 5 per tier. Gap/height/vehicle values come from `src/levels/levels.ts`; budgets and gold targets were set from the cost of
-a verified reference solution (`src/levels/solutions.ts`): gold = ceil(1.08 x reference cost), budget = reference x 1.8 / 1.6 / 1.45 / 1.35 by tier.
+30 levels, 5 per tier (6 tiers). Gap/height/vehicle values come from `src/levels/levels.ts`; budgets and gold targets were set from the cost of
+a verified reference solution (`src/levels/solutions.ts`): gold = ceil(1.08 x reference cost), budget = reference x 1.8 / 1.6 / 1.45 / 1.35 / 1.3 / 1.3 by tier.
 
 | # | Name | Tier | Vehicle | Idea |
 |---|---|---|---|---|
@@ -25,6 +25,16 @@ a verified reference solution (`src/levels/solutions.ts`): gold = ceil(1.08 x re
 | 18 | Ruined Crossing | 4 | Dump truck | 36 m, three piers |
 | 19 | Titan Load | 4 | Dump truck | steel only, heavy |
 | 20 | Grand Gorge | 4 | Dump truck | uneven banks + island |
+| 21 | Rush Hour | 5 | Van | one deep truss, 20 m |
+| 22 | Stepping Stones | 5 | Pickup | four spans over rocks at different heights |
+| 23 | Wire Walk | 5 | Bus | road + cable only, two towers |
+| 24 | Heavy Metal | 5 | Dump truck | steel + road only, uphill |
+| 25 | Deep Gorge | 5 | Bus | very deep canyon, tall truss |
+| 26 | Island Hopper | 6 | Bus | three islands at different heights, four spans |
+| 27 | Skyline | 6 | Dump truck | tower anchor, no wood for gold |
+| 28 | Penny Pincher | 6 | Van | wood only, 8-beam limit (quick puzzle) |
+| 29 | Up and Over | 6 | Bus | steep 8 m climb with a mid pier |
+| 30 | Grand Finale | 6 | Dump truck | 44 m, uneven banks, two towers |
 
 **Stars:** 1 = vehicle arrives; 2 = cost at or below the gold target **and no member broke**; 3 = also meets the level challenge
 (max beams / forbidden material / peak load below a % of member strength).

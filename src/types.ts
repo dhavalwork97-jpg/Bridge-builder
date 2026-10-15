@@ -55,7 +55,7 @@ export type Challenge =
 export interface LevelDef {
   id: number;
   name: string;
-  tier: 1 | 2 | 3 | 4;
+  tier: 1 | 2 | 3 | 4 | 5 | 6;
   hint: string;
   landmasses: Landmass[];
   anchors: Vec2[];

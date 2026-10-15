@@ -1,7 +1,7 @@
 # Bridge Builder: Build & Cross
 
 A procedural, asset-free HTML5 bridge-construction physics puzzle. Build a bridge from road, wood, steel and cable within a
-budget, press **Test**, and watch a vehicle try to cross. 20 levels in 4 tiers, 3 stars each. No images or audio files: all
+budget, press **Test**, and watch a vehicle try to cross. 30 levels in 6 tiers, 3 stars each. No images or audio files: all
 graphics are drawn on canvas and all sound is synthesised.
 
 TypeScript + Vite, no runtime dependencies.

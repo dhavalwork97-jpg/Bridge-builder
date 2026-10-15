@@ -8,10 +8,10 @@ import { VEHICLES } from '../src/config';
 import { groundHeightAt } from '../src/sim/terrain';
 
 describe('level data', () => {
-  it('ships exactly 20 levels with unique sequential ids and 4 tiers of 5', () => {
-    expect(LEVELS.map((l) => l.id)).toEqual(Array.from({ length: 20 }, (_, i) => i + 1));
-    for (let t = 1; t <= 4; t++) expect(LEVELS.filter((l) => l.tier === t)).toHaveLength(5);
-    expect(new Set(LEVELS.map((l) => l.name)).size).toBe(20);
+  it('ships exactly 30 levels with unique sequential ids and 6 tiers of 5', () => {
+    expect(LEVELS.map((l) => l.id)).toEqual(Array.from({ length: 30 }, (_, i) => i + 1));
+    for (let t = 1; t <= 6; t++) expect(LEVELS.filter((l) => l.tier === t)).toHaveLength(5);
+    expect(new Set(LEVELS.map((l) => l.name)).size).toBe(30);
   });
   for (const lvl of LEVELS) {
     it(`L${lvl.id} "${lvl.name}" has valid configuration`, () => {
@@ -59,6 +59,8 @@ describe('level data', () => {
     expect(load(2)).toBeGreaterThan(load(1));
     expect(load(3)).toBeGreaterThan(load(2) * 0.8);
     expect(load(4)).toBeGreaterThan(load(3));
+    expect(load(5)).toBeGreaterThan(load(3));
+    expect(load(6)).toBeGreaterThan(load(5) * 0.9);
   });
 });
 

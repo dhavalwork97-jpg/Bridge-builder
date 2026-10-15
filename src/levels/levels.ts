@@ -8,7 +8,7 @@ import type { Challenge, LevelDef, Landmass, MaterialId, Vec2, VehicleId } from 
  */
 interface Pillar { x: number; w: number; y?: number }
 interface Spec {
-  id: number; name: string; tier: 1 | 2 | 3 | 4; hint: string;
+  id: number; name: string; tier: 1 | 2 | 3 | 4 | 5 | 6; hint: string;
   vehicle: VehicleId; materials: MaterialId[];
   W: number; yl?: number; yr?: number; pillars?: Pillar[];
   depths?: number[]; aerial?: Vec2[];
@@ -43,7 +43,7 @@ function make(s: Spec): LevelDef {
   return {
     id: s.id, name: s.name, tier: s.tier, hint: s.hint,
     landmasses, anchors,
-    buildArea: { minX: -1.5, maxX: W + 1.5, minY: Math.min(yl, yr) - 8.5, maxY: Math.max(...ys) + 4 },
+    buildArea: { minX: -1.5, maxX: W + 1.5, minY: Math.min(yl, yr) - Math.max(8.5, Math.max(...depths) + 1.5), maxY: Math.max(...ys) + 4 },
     startX: -4.5, goalX: W + 6,
     budget: s.budget, goldBudget: s.gold, materials: s.materials, vehicle: s.vehicle, challenge: s.challenge,
   };
@@ -64,7 +64,7 @@ export const SPECS: Spec[] = [
   { id: 4, name: 'Steel Intro', tier: 1, hint: 'Steel costs more but is far stronger. Use it where the load is highest.',
     vehicle: 'truck', materials: ['road', 'wood', 'steel'], W: 14, depths: [3, 5], budget: 6800, gold: 4150, challenge: safety(0.5) },
   { id: 5, name: 'Rising Road', tier: 1, hint: 'The far bank is higher. Keep the deck connected and braced from underneath.',
-    vehicle: 'truck', materials: ['road', 'wood', 'steel'], W: 14, yl: 0, yr: 3, depths: [3, 5], budget: 7000, gold: 4200, challenge: beams(9) },
+    vehicle: 'truck', materials: ['road', 'wood', 'steel'], W: 14, yl: 0, yr: 3, depths: [3, 5], budget: 7000, gold: 4200, challenge: beams(8) },
   // ---------------- Tier 2: support & balance ----------------
   { id: 6, name: 'Wide Canyon', tier: 2, hint: 'Watch the colours: red members are close to breaking. Reinforce them or add triangles.',
     vehicle: 'truck', materials: ['road', 'wood', 'steel'], W: 18, depths: [3, 5, 7], budget: 8100, gold: 5500, challenge: safety(0.85) },
@@ -98,6 +98,28 @@ export const SPECS: Spec[] = [
     vehicle: 'dumper', materials: ['road', 'steel', 'cable'], W: 18, depths: [3, 5, 7], budget: 8200, gold: 6600, challenge: safety(0.85) },
   { id: 20, name: 'Grand Gorge', tier: 4, hint: 'The final span: uneven banks, a central tower, a heavy load.',
     vehicle: 'dumper', materials: ALL, W: 28, yl: 3, yr: -1, pillars: [{ x: 14, w: 2 }], aerial: [{ x: 14, y: 11 }], depths: [3, 5, 7], budget: 12700, gold: 10200, challenge: safety(0.8) },
+  // ---------------- Tier 5: expert engineering ----------------
+  { id: 21, name: 'Rush Hour', tier: 5, hint: 'A busy commuter crossing with a van. Build one clean, deep truss and keep every member comfortable.',
+    vehicle: 'van', materials: ALL, W: 20, depths: [3, 5, 7], budget: 7400, gold: 6150, challenge: safety(0.65) },
+  { id: 22, name: 'Stepping Stones', tier: 5, hint: 'Four rocks at different heights. Each span has its own slope, so line the deck up joint by joint.',
+    vehicle: 'truck', materials: ALL, W: 32, pillars: [{ x: 8, w: 2, y: 1 }, { x: 16, w: 2, y: -1 }, { x: 24, w: 2, y: 1 }], depths: [3, 5], budget: 7200, gold: 5950, challenge: beams(30) },
+  { id: 23, name: 'Wire Walk', tier: 5, hint: 'Only road and cable. Two towers, no steel: fan the stays out so every deck joint is held from above.',
+    vehicle: 'bus', materials: ['road', 'cable'], W: 30, pillars: [{ x: 10, w: 2 }, { x: 20, w: 2 }], aerial: [{ x: 10, y: 9 }, { x: 20, y: 9 }], depths: [3, 5], budget: 7200, gold: 5950, challenge: safety(0.6) },
+  { id: 24, name: 'Heavy Metal', tier: 5, hint: 'Steel and road only, a dump truck and a climb. Deep trusses spread the load; shallow ones bend.',
+    vehicle: 'dumper', materials: ['road', 'steel'], W: 16, yl: 0, yr: 2, depths: [3, 5, 7], budget: 9200, gold: 7650, challenge: safety(0.85) },
+  { id: 25, name: 'Deep Gorge', tier: 5, hint: 'A very deep canyon and a long way down. Use the tall wall anchors to make a truss as deep as you can afford.',
+    vehicle: 'bus', materials: ALL, W: 24, yl: 4, yr: 0, depths: [3, 6, 9], budget: 13200, gold: 10950, challenge: beams(24) },
+  // ---------------- Tier 6: master builder ----------------
+  { id: 26, name: 'Island Hopper', tier: 6, hint: 'Three islands, four spans, and a bus. Balance the cost between spans so none is over- or under-built.',
+    vehicle: 'bus', materials: ALL, W: 40, pillars: [{ x: 10, w: 2, y: 0 }, { x: 20, w: 2, y: 2 }, { x: 30, w: 2, y: 0 }], depths: [3, 5], budget: 12500, gold: 10400, challenge: safety(0.5) },
+  { id: 27, name: 'Skyline', tier: 6, hint: 'A huge tower and a dump truck, with no wood allowed for the gold star. Cables from the tower can trim the cost.',
+    vehicle: 'dumper', materials: ALL, W: 30, pillars: [{ x: 15, w: 2 }], aerial: [{ x: 15, y: 12 }], depths: [3, 5], budget: 13000, gold: 10800, challenge: noMat('wood', 'wood') },
+  { id: 28, name: 'Penny Pincher', tier: 6, hint: 'Wood and road only, and every beam counts. A short, smart truss beats a big messy one.',
+    vehicle: 'van', materials: ['road', 'wood'], W: 9, depths: [3, 5, 7], budget: 2800, gold: 2300, challenge: beams(8) },
+  { id: 29, name: 'Up and Over', tier: 6, hint: 'A steep climb with a pier halfway. Plan the road line first, then make the supports follow it.',
+    vehicle: 'bus', materials: ALL, W: 30, yl: 0, yr: 8, pillars: [{ x: 15, w: 2, y: 4 }], depths: [3, 5, 7], budget: 13000, gold: 10800, challenge: safety(0.7) },
+  { id: 30, name: 'Grand Finale', tier: 6, hint: 'The longest crossing yet: uneven banks, two towers, the heaviest load. Everything you have learned applies.',
+    vehicle: 'dumper', materials: ALL, W: 44, yl: 3, yr: -2, pillars: [{ x: 15, w: 2, y: 1.5 }, { x: 30, w: 2, y: -0.5 }], aerial: [{ x: 15, y: 10 }, { x: 30, y: 8 }], depths: [3, 5, 7], budget: 18900, gold: 15650, challenge: safety(0.75) },
 ];
 
 export const LEVELS: LevelDef[] = SPECS.map(make);

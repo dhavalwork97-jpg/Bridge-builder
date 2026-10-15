@@ -54,7 +54,7 @@ try:
         click_ui(page, '#menu-levels'); page.wait_for_timeout(200)
         page.screenshot(path='qa/shots/02_levels.png')
         locked = page.eval_on_selector_all('.level-card[aria-disabled="true"]', 'els => els.length')
-        check('only level 1 unlocked at start', locked == 19, f'locked={locked}')
+        check('only level 1 unlocked at start', locked == 29, f'locked={locked}')
         page.click('.level-card >> nth=1', force=True)   # locked level must not start even if clicked
         page.wait_for_timeout(200)
         check('locked level does not start', qa(page)['screen'] == 'levels')
@@ -136,7 +136,7 @@ try:
         # reload keeps progress
         page.reload(); page.wait_for_selector('#menu-levels'); click_ui(page, '#menu-levels'); page.wait_for_timeout(200)
         locked = page.eval_on_selector_all('.level-card[aria-disabled="true"]', 'els => els.length')
-        check('progress survives reload (levels 1-3 unlocked)', locked == 17, f'locked={locked}')
+        check('progress survives reload (levels 1-3 unlocked)', locked == 27, f'locked={locked}')
 
         # corrupted save does not crash
         page.evaluate("localStorage.setItem('bridge-builder-build-and-cross:v1', '{broken json')")

@@ -419,8 +419,9 @@ export class Game {
 
   private renderLevelGrid(): void {
     const grid = $('level-grid'); grid.innerHTML = '';
-    const names = ['Learn the basics', 'Support & balance', 'Material mastery', 'Advanced engineering'];
-    for (let tier = 1; tier <= 4; tier++) {
+    const names = ['Learn the basics', 'Support & balance', 'Material mastery', 'Advanced engineering', 'Expert engineering', 'Master builder'];
+    const tierCount = Math.max(...LEVELS.map((l) => l.tier));
+    for (let tier = 1; tier <= tierCount; tier++) {
       const t = document.createElement('div'); t.className = 'tier-title'; t.style.gridColumn = '1 / -1'; t.textContent = `Tier ${tier} \u00b7 ${names[tier - 1]}`; grid.appendChild(t);
       for (const lvl of LEVELS.filter((l) => l.tier === tier)) {
         const unlocked = this.store.isUnlocked(lvl.id), rec = this.store.record(lvl.id);

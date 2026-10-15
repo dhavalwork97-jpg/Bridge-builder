@@ -96,4 +96,21 @@ export const SOLUTIONS: Record<number, Seg[]> = {
   18: spans([[0, 0, 8, 0], [10, 0, 17, 0], [19, 0, 26, 0], [28, 0, 36, 0]], [2, 3, 'cable', 'steel', 'steel']),
   19: spans([[0, 0, 18, 0]], [3, 5, 'cable', 'steel', 'steel']),
   20: spans([[0, 3, 13, 1], [15, 1, 28, -1]], [2, 3, 'steel', 'steel', 'steel']),
+  // Tier 5-6 (levels 21-30)
+  21: spans([[0, 0, 20, 0]], [3, 3, 'cable', 'steel', 'steel']),
+  22: spans([[0, 0, 7, 1], [9, 1, 15, -1], [17, -1, 23, 1], [25, 1, 32, 0]], [2, 3, 'cable', 'wood', 'wood']),
+  // Two towers, road + cable only: stays fan from each tower to the deck joints it serves.
+  23: S(
+    stayedDeck([0, 3, 6, 9], () => 0, 10, 9, [3, 6, 9]),
+    stayedDeck([11, 13, 15, 17, 19], () => 0, 10, 9, [11, 13]).filter((g) => g[4] === 'cable'),
+    stayedDeck([11, 13, 15, 17, 19], () => 0, 20, 9, [17, 19]),
+    stayedDeck([21, 24, 27, 30], () => 0, 20, 9, [21, 24, 27]),
+  ),
+  24: spans([[0, 0, 16, 2]], [3, 5, 'steel', 'steel', 'steel']),
+  25: spans([[0, 4, 24, 0]], [5, 6, 'cable', 'steel', 'steel']),
+  26: spans([[0, 0, 9, 0], [11, 0, 19, 2], [21, 2, 29, 0], [31, 0, 40, 0]], [2, 3, 'cable', 'wood', 'steel']),
+  27: spans([[0, 0, 14, 0], [16, 0, 30, 0]], [2, 3, 'steel', 'steel', 'steel']),
+  28: spans([[0, 0, 9, 0]], [2, 5, 'wood', 'wood', 'wood']),
+  29: spans([[0, 0, 14, 4], [16, 4, 30, 8]], [4, 3, 'cable', 'steel', 'steel']),
+  30: spans([[0, 3, 14, 1.5], [16, 1.5, 29, -0.5], [31, -0.5, 44, -2]], [2, 3, 'steel', 'steel', 'steel']),
 };
