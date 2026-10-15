@@ -244,10 +244,7 @@ export class Simulation {
         const d = Math.hypot(dx, dy);
         const R = r + b.thickness / 2;
         if (d >= R || d < 1e-9) continue;
-        // Add a bounded impact term from wheel vertical speed. Static weight alone made
-        // bridges feel like unbreakable planks when a vehicle landed hard on a weak deck.
-        const impactAcceleration = Math.min(PHYSICS.gravity * 0.25, Math.abs(w.vy) * 0.35);
-        b.contactLoad = Math.max(b.contactLoad, (1 / w.invMass) * (PHYSICS.gravity + impactAcceleration));
+        b.contactLoad = Math.max(b.contactLoad, (1 / w.invMass) * PHYSICS.gravity);
         const pen = R - d;
         const nx = dx / d, ny = dy / d;
         const wa = (1 - t) * (1 - t) * A.invMass, wb = t * t * B.invMass;
@@ -314,7 +311,7 @@ export class Simulation {
     for (const w of this.wheels) if (!isFiniteNum(w.x) || !isFiniteNum(w.y)) { this.numericError = true; }
     if (this.numericError) { this.fail('numeric'); return; }
 
-    const roadAdj = new Map<number, number[]>(), braced = new Set<number>(), nonRoadDegree = new Map<number, number>(), cableNodes = new Set<number>();
+    const roadAdj = new Map<number, number[]>(), braced = new Set<number>(), nonRoadDegree = new Map<number, number>(), nonRoadStrength = new Map<number, number>(), cableNodes = new Set<number>();
     for (let i = 0; i < this.beams.length; i++) {
       const beam = this.beams[i]; if (beam.broken) continue;
       if (beam.drivable) {
@@ -324,6 +321,9 @@ export class Simulation {
         braced.add(beam.a); braced.add(beam.b);
         nonRoadDegree.set(beam.a, (nonRoadDegree.get(beam.a) ?? 0) + 1);
         nonRoadDegree.set(beam.b, (nonRoadDegree.get(beam.b) ?? 0) + 1);
+        const supportStrength = Math.max(beam.maxT, beam.maxC);
+        nonRoadStrength.set(beam.a, (nonRoadStrength.get(beam.a) ?? 0) + supportStrength);
+        nonRoadStrength.set(beam.b, (nonRoadStrength.get(beam.b) ?? 0) + supportStrength);
         if (beam.material === 'cable') { cableNodes.add(beam.a); cableNodes.add(beam.b); }
       }
     }
@@ -340,13 +340,12 @@ export class Simulation {
           for (const next of roadAdj.get(n) ?? []) if (!visited.has(next)) { visited.add(next); queue.push(next); }
         }
       }
-      // A single weak diagonal must not make an entire road run immune to bending.
-      // Treat the run as adequately braced only when every internal deck joint has a
-      // meaningful triangulated support (two non-road members) or a cable stay.
-      const internalDeckNodes = [...componentNodes].filter(n =>
-        !this.nodes[n].fixed && (roadAdj.get(n) ?? []).length >= 2);
-      const supported = internalDeckNodes.some(n =>
-        (nonRoadDegree.get(n) ?? 0) >= 2 || cableNodes.has(n));
+      // A single low-strength brace must not make an entire road run immune to bending.
+      // Multiple members, a cable stay, or one sufficiently strong support can brace a joint.
+      const supported = [...componentNodes].some(n => !this.nodes[n].fixed &&
+        (((roadAdj.get(n) ?? []).length >= 2 &&
+          ((nonRoadDegree.get(n) ?? 0) >= 2 || (nonRoadStrength.get(n) ?? 0) >= 60000)) ||
+          cableNodes.has(n)));
       if (!supported) for (const bi of component) spanLengths.set(this.beams[bi].id, spanLength);
     }
 
