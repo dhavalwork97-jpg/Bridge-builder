@@ -1,8 +1,8 @@
 {
-  "name": "bridge-builder-build-and-cross",
+  "name": "bridge-maker-build-and-cross",
   "version": "1.0.0",
   "private": true,
-  "description": "BRIDGE BUILDER: BUILD & CROSS - a procedural, asset-free HTML5 bridge construction physics puzzle game.",
+  "description": "BRIDGE MAKER: BUILD & CROSS - a procedural, asset-free HTML5 bridge construction physics puzzle game.",
   "type": "module",
   "license": "MIT",
   "scripts": {

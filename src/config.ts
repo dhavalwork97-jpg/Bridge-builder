@@ -65,7 +65,7 @@ export const SCORING = {
 };
 
 export const GAME = {
-  title: 'BRIDGE BUILDER: BUILD & CROSS',
+  title: 'BRIDGE MAKER: BUILD & CROSS',
   saveKey: 'bridge-builder-build-and-cross',
   saveVersion: 1,
 };

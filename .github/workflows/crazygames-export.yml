@@ -34,14 +34,14 @@ jobs:
       - name: Package submission ZIP with index.html at root
         run: |
           cd dist
-          zip -r ../Bridge-Builder-CrazyGames.zip .
+          zip -r ../Bridge-Maker-CrazyGames.zip .
           cd ..
-          unzip -l Bridge-Builder-CrazyGames.zip
+          unzip -l Bridge-Maker-CrazyGames.zip
           test -f dist/index.html
       - name: Upload submission ZIP
         uses: actions/upload-artifact@v4
         with:
-          name: Bridge-Builder-CrazyGames
-          path: Bridge-Builder-CrazyGames.zip
+          name: Bridge-Maker-CrazyGames
+          path: Bridge-Maker-CrazyGames.zip
           if-no-files-found: error
           retention-days: 14

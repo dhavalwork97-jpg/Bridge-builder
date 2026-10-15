@@ -1,4 +1,4 @@
-"""Headless-Chromium QA for BRIDGE BUILDER. Drives the real UI with real pointer/touch input.
+"""Headless-Chromium QA for BRIDGE MAKER. Drives the real UI with real pointer/touch input.
 Usage: python3 qa/browser_qa.py  (expects `npm run build` output in dist/)"""
 import json, subprocess, sys, time, os
 from playwright.sync_api import sync_playwright

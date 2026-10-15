@@ -1,11 +1,11 @@
-# Store listing copy: Bridge Builder
+# Store listing copy: Bridge Maker
 
 All copy below describes only what is in the game today (30 levels, 4 materials, 4 vehicles, no ads, no accounts).
 Cover art carries the title only (CrazyGames rules: no borders, badges, "Play" text or store logos). Re-check each portal's
 current field limits before pasting. YouTube Playables says titles and descriptions must not contain branding or logos.
 
 ## Title
-Bridge Builder
+Bridge Maker
 
 ## Tagline
 Build the bridge. Test it. Watch it hold, or fall.
@@ -14,7 +14,7 @@ Build the bridge. Test it. Watch it hold, or fall.
 Design bridges from road, wood, steel and cable on a budget, then drive a vehicle across in a physics test. 30 levels, 3 stars each.
 
 ## Long description
-Bridge Builder is a physics puzzle about engineering on a budget. Every level has a gap to cross and a vehicle waiting on one side.
+Bridge Maker is a physics puzzle about engineering on a budget. Every level has a gap to cross and a vehicle waiting on one side.
 Lay roads, brace them with wood and steel, hang cables from pylons, then press Test and watch the load move through your bridge.
 Members that carry too much give way, so every joint counts.
 

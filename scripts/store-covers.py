@@ -3,7 +3,7 @@ badges/'Play' text, no store logos). Output: store/covers/*.png. Usage: python3 
 import os
 from playwright.sync_api import sync_playwright
 
-TITLE = ('BRIDGE', 'BUILDER')
+TITLE = ('BRIDGE', 'MAKER')
 HERO = os.path.abspath('store/shots/cable-stayed-l15.png')
 # (file, w, h, background-position-x in %, bg zoom (% of shot width), title size px, title top %)
 COVERS = [('cover-landscape-1920x1080', 1920, 1080, 50, 100, 190, 5),
