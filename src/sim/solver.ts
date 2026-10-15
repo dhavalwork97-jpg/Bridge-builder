@@ -246,7 +246,7 @@ export class Simulation {
         if (d >= R || d < 1e-9) continue;
         // Add a bounded impact term from wheel vertical speed. Static weight alone made
         // bridges feel like unbreakable planks when a vehicle landed hard on a weak deck.
-        const impactAcceleration = Math.min(PHYSICS.gravity * 2, Math.abs(w.vy) * 6);
+        const impactAcceleration = Math.min(PHYSICS.gravity * 0.25, Math.abs(w.vy) * 0.35);
         b.contactLoad = Math.max(b.contactLoad, (1 / w.invMass) * (PHYSICS.gravity + impactAcceleration));
         const pen = R - d;
         const nx = dx / d, ny = dy / d;
@@ -345,9 +345,9 @@ export class Simulation {
       // meaningful triangulated support (two non-road members) or a cable stay.
       const internalDeckNodes = [...componentNodes].filter(n =>
         !this.nodes[n].fixed && (roadAdj.get(n) ?? []).length >= 2);
-      const fullyBraced = internalDeckNodes.length > 0 && internalDeckNodes.every(n =>
+      const supported = internalDeckNodes.some(n =>
         (nonRoadDegree.get(n) ?? 0) >= 2 || cableNodes.has(n));
-      if (!fullyBraced) for (const bi of component) spanLengths.set(this.beams[bi].id, spanLength);
+      if (!supported) for (const bi of component) spanLengths.set(this.beams[bi].id, spanLength);
     }
 
     const k = 1 - Math.exp(-dt / PHYSICS.forceSmoothing);
