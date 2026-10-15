@@ -1,0 +1,47 @@
+name: CrazyGames Submission Export
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "index.html"
+      - "vite.config.ts"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - ".github/workflows/crazygames-export.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out latest main
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Build CrazyGames version
+        run: npm run build:crazygames
+      - name: Package submission ZIP with index.html at root
+        run: |
+          cd dist
+          zip -r ../Bridge-Builder-CrazyGames.zip .
+          cd ..
+          unzip -l Bridge-Builder-CrazyGames.zip
+          test -f dist/index.html
+      - name: Upload submission ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bridge-Builder-CrazyGames
+          path: Bridge-Builder-CrazyGames.zip
+          if-no-files-found: error
+          retention-days: 14
