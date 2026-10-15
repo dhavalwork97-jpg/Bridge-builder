@@ -10,8 +10,9 @@ Builds: `npm run build` (local/generic, zero external URLs) · `npm run build:cr
 ## CrazyGames (HTML5 SDK v3)
 Method names checked against https://docs.crazygames.com/sdk/html5-v3/ : `SDK.init()`, `game.loadingStart/loadingStop`,
 `game.gameplayStart/gameplayStop`, `game.settings.muteAudio` + `addSettingsChangeListener`.
-Implemented: init, loading start/stop, gameplayStart on entering a level / resuming, gameplayStop on menus, pause, result, tab hidden; audio mute follows the platform setting.
+Implemented: init, loading start/stop, progress saving via the SDK Data module (`SDK.data.getItem/setItem`; falls back to localStorage if the SDK is absent, and an existing localStorage save is migrated on first load), gameplayStart on entering a level / resuming, gameplayStop on menus, pause, result, tab hidden; audio mute follows the platform setting.
 Checklist before submitting:
+- [ ] In the submission form, answer **"Does your game save progress?" = Yes** (Data module is used). The QA tool does not sync data between simulated users, so account sync cannot be tested there.
 - [x] SDK script URL `https://sdk.crazygames.com/crazygames-sdk-v3.js` and `SDK.init`, `game.loadingStart/Stop`, `game.gameplayStart/Stop` confirmed against the current v3 docs (15 Oct 2026). `game.settings.muteAudio` / `addSettingsChangeListener` could not be re-confirmed (docs page unreachable); calls are optional-chained so they are harmless if the names differ.
 - [ ] Upload `dist/` as a zip with `index.html` at the root; test in the CrazyGames QA tool (desktop + mobile).
 - [ ] Verify no external requests other than the SDK, mute control works, game is playable offline after load.

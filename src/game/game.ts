@@ -111,7 +111,7 @@ export class Game {
   private async hydratePlatformSave(): Promise<void> {
     if (!this.adapter.usesPlatformSave) return;
     this.store.useExternal((j) => this.adapter.writeSave(j));
-    this.store.hydrate(this.adapter.sdkReady ? await this.adapter.loadSave() : null);
+    this.store.hydrate(await this.adapter.loadSave());
     const s = this.store.data.settings;
     this.stressView = s.stressView;
     this.particles.reduced = s.reduceMotion;

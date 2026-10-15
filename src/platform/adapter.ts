@@ -10,7 +10,12 @@
  *    ytgame.game.gameReady, ytgame.system.onPause/onResume, ytgame.system.isAudioEnabled/onAudioEnabledChange,
  *    ytgame.engagement.sendScore, ytgame.game.saveData/loadData)
  */
+import { GAME } from '../config';
+
 declare const __PLATFORM__: string;
+
+/** Same key the plain localStorage build uses, so existing local progress migrates into the platform save. */
+const SAVE_KEY = `${GAME.saveKey}:v${GAME.saveVersion}`;
 
 export interface PlatformHooks { onPause(): void; onResume(): void; onMuteChange(muted: boolean): void }
 
@@ -54,9 +59,23 @@ export class LocalAdapter implements PlatformAdapter {
 export class CrazyGamesAdapter implements PlatformAdapter {
   readonly name = 'crazygames' as const;
   sdkReady = false;
-  readonly usesPlatformSave = false;
-  async loadSave(): Promise<string | null> { return null; }
-  writeSave(): void {}
+  /**
+   * Progress goes through the SDK Data module (account-synced for logged-in players; guests are kept in
+   * localStorage by the SDK itself). If the SDK is missing or failed, we fall back to plain localStorage,
+   * and an existing localStorage save is read when the Data module has nothing yet (one-time migration).
+   */
+  readonly usesPlatformSave = true;
+  private get data(): any { return this.sdkReady ? this.win.CrazyGames?.SDK?.data : undefined; }
+  private get ls(): any { try { return this.win.localStorage; } catch { return undefined; } }
+  async loadSave(): Promise<string | null> {
+    try { const v = this.data?.getItem?.(SAVE_KEY); if (typeof v === 'string' && v.length > 0) return v; } catch { /* fall through */ }
+    try { const v = this.ls?.getItem?.(SAVE_KEY); return typeof v === 'string' && v.length > 0 ? v : null; } catch { return null; }
+  }
+  writeSave(data: string): void {
+    const d = this.data;
+    if (d && typeof d.setItem === 'function') { safe(() => d.setItem(SAVE_KEY, data)); return; }
+    safe(() => this.ls?.setItem?.(SAVE_KEY, data));
+  }
   private playing = false;
   constructor(private win: any = globalThis) {}
   private get sdk(): any { return this.sdkReady ? this.win.CrazyGames?.SDK : undefined; }

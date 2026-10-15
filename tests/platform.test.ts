@@ -74,4 +74,28 @@ describe('platform adapters', () => {
     const none = new YouTubeAdapter({});
     expect(await none.loadSave()).toBeNull();
   });
+  it('CrazyGames adapter saves through SDK.data, migrates a localStorage save, and falls back to localStorage without the SDK', async () => {
+    const KEY = 'bridge-builder-build-and-cross:v1';
+    const store = new Map<string, string>();
+    const data = { getItem: vi.fn((k: string) => store.get(k) ?? null), setItem: vi.fn((k: string, v: string) => void store.set(k, v)) };
+    const ls = new Map<string, string>([[KEY, '{"old":1}']]);
+    const localStorage = { getItem: (k: string) => ls.get(k) ?? null, setItem: (k: string, v: string) => void ls.set(k, v) };
+    const a = new CrazyGamesAdapter({ localStorage, CrazyGames: { SDK: { init: async () => {}, data } } });
+    await a.init(hooks());
+    expect(a.usesPlatformSave).toBe(true);
+    expect(await a.loadSave()).toBe('{"old":1}');          // Data module empty -> migrates the local save
+    a.writeSave('{"new":1}');
+    expect(data.setItem).toHaveBeenCalledWith(KEY, '{"new":1}');
+    expect(ls.get(KEY)).toBe('{"old":1}');                   // localStorage untouched while the SDK is healthy
+    expect(await a.loadSave()).toBe('{"new":1}');           // Data module wins once it has a value
+    const ls2 = new Map<string, string>();
+    const bare = new CrazyGamesAdapter({ localStorage: { getItem: (k: string) => ls2.get(k) ?? null, setItem: (k: string, v: string) => void ls2.set(k, v) } });
+    await bare.init(hooks());
+    bare.writeSave('abc');
+    expect(await bare.loadSave()).toBe('abc');               // no SDK: plain localStorage
+    const broken = new CrazyGamesAdapter({ CrazyGames: { SDK: { init: async () => {}, data: { getItem: () => { throw new Error('x'); }, setItem: () => { throw new Error('y'); } } } } });
+    await broken.init(hooks());
+    expect(await broken.loadSave()).toBeNull();
+    expect(() => broken.writeSave('z')).not.toThrow();
+  });
 });
