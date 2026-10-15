@@ -40,6 +40,32 @@ describe('structural solver', () => {
     expect(result.sim.events.some((event) => event.type === 'break')).toBe(true);
   });
 
+  it('a single weak brace does not make a long road deck immune to bending failure', () => {
+    const lvl = gapLevel({
+      vehicle: 'dumper',
+      anchors: [{ x: 0, y: 0 }, { x: 12, y: 0 }, { x: 6, y: -3 }],
+      landmasses: [
+        { top: [{ x: -14, y: 0 }, { x: 0, y: 0 }] },
+        { top: [{ x: 12, y: 0 }, { x: 26, y: 0 }] },
+      ],
+    });
+    const nodes: BNode[] = [
+      { id: 1, x: 0, y: 0, kind: 'anchor', fixed: true },
+      { id: 2, x: 12, y: 0, kind: 'anchor', fixed: true },
+      { id: 3, x: 6, y: 0, kind: 'junction', fixed: false },
+      { id: 4, x: 6, y: -3, kind: 'anchor', fixed: true },
+    ];
+    const beams: BBeam[] = [
+      { id: 1, a: 1, b: 3, material: 'road' },
+      { id: 2, a: 3, b: 2, material: 'road' },
+      { id: 3, a: 3, b: 4, material: 'wood' },
+    ];
+    const result = runHeadless(lvl, nodes, beams, 40);
+    expect(result.broken).toBeGreaterThan(0);
+    expect(result.won).toBe(false);
+    expect(result.sim.events.some((event) => event.type === 'break')).toBe(true);
+  });
+
   it('an unsupported road span between fixed anchors can fail under a heavy vehicle', () => {
     const lvl = gapLevel({
       vehicle: 'dumper',

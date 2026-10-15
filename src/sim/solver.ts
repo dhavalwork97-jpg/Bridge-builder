@@ -311,7 +311,7 @@ export class Simulation {
     for (const w of this.wheels) if (!isFiniteNum(w.x) || !isFiniteNum(w.y)) { this.numericError = true; }
     if (this.numericError) { this.fail('numeric'); return; }
 
-    const roadAdj = new Map<number, number[]>(), braced = new Set<number>(), nonRoadDegree = new Map<number, number>(), cableNodes = new Set<number>();
+    const roadAdj = new Map<number, number[]>(), braced = new Set<number>(), nonRoadDegree = new Map<number, number>(), nonRoadStrength = new Map<number, number>(), cableNodes = new Set<number>();
     for (let i = 0; i < this.beams.length; i++) {
       const beam = this.beams[i]; if (beam.broken) continue;
       if (beam.drivable) {
@@ -321,6 +321,9 @@ export class Simulation {
         braced.add(beam.a); braced.add(beam.b);
         nonRoadDegree.set(beam.a, (nonRoadDegree.get(beam.a) ?? 0) + 1);
         nonRoadDegree.set(beam.b, (nonRoadDegree.get(beam.b) ?? 0) + 1);
+        const supportStrength = Math.max(beam.maxT, beam.maxC);
+        nonRoadStrength.set(beam.a, (nonRoadStrength.get(beam.a) ?? 0) + supportStrength);
+        nonRoadStrength.set(beam.b, (nonRoadStrength.get(beam.b) ?? 0) + supportStrength);
         if (beam.material === 'cable') { cableNodes.add(beam.a); cableNodes.add(beam.b); }
       }
     }
@@ -337,8 +340,12 @@ export class Simulation {
           for (const next of roadAdj.get(n) ?? []) if (!visited.has(next)) { visited.add(next); queue.push(next); }
         }
       }
+      // A single low-strength brace must not make an entire road run immune to bending.
+      // Multiple members, a cable stay, or one sufficiently strong support can brace a joint.
       const supported = [...componentNodes].some(n => !this.nodes[n].fixed &&
-        (((roadAdj.get(n) ?? []).length >= 2 && (nonRoadDegree.get(n) ?? 0) >= 1) || cableNodes.has(n)));
+        (((roadAdj.get(n) ?? []).length >= 2 &&
+          ((nonRoadDegree.get(n) ?? 0) >= 2 || (nonRoadStrength.get(n) ?? 0) >= 60000)) ||
+          cableNodes.has(n)));
       if (!supported) for (const bi of component) spanLengths.set(this.beams[bi].id, spanLength);
     }
 
@@ -353,7 +360,7 @@ export class Simulation {
       // Shorter unsupported spans naturally tolerate more load. This is a game approximation,
       // not a full beam-bending / finite-element solver.
       const spanLength = b.drivable ? spanLengths.get(b.id) ?? 0 : 0;
-      const bendingCapacity = b.maxT * b.thickness * 0.6;
+      const bendingCapacity = b.maxT * b.thickness * 0.7;
       const bendingUtil = b.drivable && b.contactLoad > 0 && bendingCapacity > 0
         ? (b.contactLoad * spanLength) / (4 * bendingCapacity) : 0;
       b.util = Math.max(axialUtil, bendingUtil);
