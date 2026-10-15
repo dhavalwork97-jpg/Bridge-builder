@@ -12,7 +12,7 @@ LOAD = """async (id) => {
   const S = await import('/src/levels/solutions.ts');
   const g = window.__bb;
   const lvl = L.LEVELS[id - 1];
-  g.store.data.levels = Object.fromEntries(Array.from({length: 20}, (_, i) => [String(i + 1), {stars: 3, bestCost: 1}]));
+  g.store.data.levels = Object.fromEntries(Array.from({length: 30}, (_, i) => [String(i + 1), {stars: 3, bestCost: 1}]));
   g.startLevel(lvl);
   const { graph, errors } = S.buildSolution(lvl, S.SOLUTIONS[id]);
   g.graph = graph; g.ctrl.setGraph(graph);

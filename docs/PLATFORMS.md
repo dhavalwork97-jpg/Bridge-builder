@@ -12,10 +12,10 @@ Method names checked against https://docs.crazygames.com/sdk/html5-v3/ : `SDK.in
 `game.gameplayStart/gameplayStop`, `game.settings.muteAudio` + `addSettingsChangeListener`.
 Implemented: init, loading start/stop, gameplayStart on entering a level / resuming, gameplayStop on menus, pause, result, tab hidden; audio mute follows the platform setting.
 Checklist before submitting:
-- [ ] Re-read the current SDK docs and QA guidelines; confirm the SDK script URL in `vite.config.ts` is still current.
+- [x] SDK script URL `https://sdk.crazygames.com/crazygames-sdk-v3.js` and `SDK.init`, `game.loadingStart/Stop`, `game.gameplayStart/Stop` confirmed against the current v3 docs (15 Oct 2026). `game.settings.muteAudio` / `addSettingsChangeListener` could not be re-confirmed (docs page unreachable); calls are optional-chained so they are harmless if the names differ.
 - [ ] Upload `dist/` as a zip with `index.html` at the root; test in the CrazyGames QA tool (desktop + mobile).
 - [ ] Verify no external requests other than the SDK, mute control works, game is playable offline after load.
-- [x] Cover images (1920x1080, 800x1200, 800x800 per the CrazyGames cover rules), screenshots and listing copy are in `store/` (see `store/LISTING.md`). Still to do: a 15-20 s preview video. Decide on monetisation separately (ads are not implemented).
+- [x] Cover images (1920x1080, 800x1200, 800x800 per the CrazyGames cover rules), screenshots and listing copy are in `store/` (see `store/LISTING.md`). Preview videos (landscape + portrait) are in `store/video/`. Decide on monetisation separately (ads are not implemented).
 - [ ] Confirm size/load limits and mobile requirements in the current guidelines.
 
 ## YouTube Playables

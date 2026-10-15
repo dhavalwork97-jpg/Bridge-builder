@@ -45,10 +45,12 @@ No ads, no in-app purchases, no external requests, no user-generated content, no
 | `covers/cover-portrait-800x1200.png` | 2:3 cover (CrazyGames portrait) |
 | `covers/cover-square-800x800.png` | 1:1 cover (CrazyGames square) |
 | `shots/*.png` | 1920x1080 gameplay screenshots captured from the real game |
+| `video/preview-landscape-1920x1080.mp4` | 16:9 preview video, 19.9 s, no audio, no UI/cursor (CrazyGames: 15-20 s, max 50 MB) |
+| `video/preview-portrait-1080x1620.mp4` | 2:3 preview video, same footage framed for portrait |
 
+Regenerate videos: `npx vite --port 5199`, then `python3 scripts/store-video.py` (virtual 30 fps clock, ~8 min per video).
 Regenerate: run `npx vite --port 5199`, then `python3 scripts/store-shots.py` (writes 4K shots; downscale to 1920x1080 for the
 repo) and `python3 scripts/store-covers.py`.
 
 ## Not included yet
-- Preview video (CrazyGames: 15-20 s, max 50 MB, 1080p). It needs a screen recording.
 - YouTube Playables thumbnail sizes: not on the public design-requirements page; take them from the Developer Portal.
