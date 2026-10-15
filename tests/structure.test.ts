@@ -15,6 +15,31 @@ const finiteSim = (s: Simulation) =>
   s.beams.every((b) => Number.isFinite(b.force));
 
 describe('structural solver', () => {
+  it('a long road-only crossing split into short pieces still breaks under truck load', () => {
+    const lvl = gapLevel({
+      vehicle: 'truck',
+      goalX: 20,
+      anchors: [{ x: 0, y: 0 }, { x: 14, y: 3 }, { x: 0, y: -3 }, { x: 14, y: 0 }],
+      landmasses: [
+        { top: [{ x: -14, y: 0 }, { x: 0, y: 0 }] },
+        { top: [{ x: 14, y: 3 }, { x: 26, y: 3 }] },
+      ],
+    });
+    const nodes: BNode[] = [
+      { id: 1, x: 0, y: 0, kind: 'anchor', fixed: true },
+      { id: 2, x: 14, y: 3, kind: 'anchor', fixed: true },
+      { id: 3, x: 7, y: 1.5, kind: 'junction', fixed: false },
+    ];
+    const beams: BBeam[] = [
+      { id: 1, a: 1, b: 3, material: 'road' },
+      { id: 2, a: 3, b: 2, material: 'road' },
+    ];
+    const result = runHeadless(lvl, nodes, beams, 40);
+    expect(result.broken).toBeGreaterThan(0);
+    expect(result.won).toBe(false);
+    expect(result.sim.events.some((event) => event.type === 'break')).toBe(true);
+  });
+
   it('an unsupported road span between fixed anchors can fail under a heavy vehicle', () => {
     const lvl = gapLevel({
       vehicle: 'dumper',
