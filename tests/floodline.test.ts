@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PHYSICS } from '../src/config';
 import { LEVELS } from '../src/levels/levels';
+import { SOLUTIONS, buildSolution } from '../src/levels/solutions';
 import { Simulation } from '../src/sim/solver';
 
 describe('Floodline Rescue water model', () => {
