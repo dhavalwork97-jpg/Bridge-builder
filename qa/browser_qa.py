@@ -158,6 +158,31 @@ try:
         click_ui(page, '#menu-settings'); page.wait_for_timeout(200); page.screenshot(path='qa/shots/11_settings.png')
         page.click('#screen-settings [data-back]'); click_ui(page, '#menu-credits'); page.wait_for_timeout(200)
         check('settings and credits reachable', True)
+
+        # ---------------- Floodline Rescue mission smoke test ----------------
+        page.click('#screen-credits [data-back]'); page.wait_for_timeout(150)
+        click_ui(page, '#menu-rescue'); page.wait_for_selector('#toolbar', state='visible')
+        check('Floodline Rescue opens without campaign unlock', qa(page)['level'] == 2 and qa(page)['mode'] == 'build')
+        check('rescue briefing and countdown HUD visible',
+              page.locator('#rescue-status').is_visible() and 'Emergency supply run' in page.locator('#hint').inner_text())
+        rescue_save_before = page.evaluate("localStorage.getItem('bridge-builder-build-and-cross:v1')")
+        # Reference short-hop structure, built using the same pointer input as a player.
+        page.click('.mat[data-mat="road"]')
+        tap_world(page, 0, 0); tap_world(page, 5, 0)
+        tap_world(page, 5, 0); tap_world(page, 10, 0)
+        page.click('.mat[data-mat="wood"]')
+        tap_world(page, 0, -4); tap_world(page, 5, 0)
+        tap_world(page, 10, -4); tap_world(page, 5, 0)
+        check('rescue route can be built within the UI', qa(page)['beams'] == 4, str(qa(page)['beams']))
+        click_ui(page, '#btn-test')
+        rescue = wait_state(page, lambda s: s['mode'] == 'result', 20)
+        check('rescue truck crosses before flood deadline',
+              rescue['mode'] == 'result' and rescue['simState'] == 'won', str(rescue['simState']))
+        check('rescue completion has its own result screen',
+              page.locator('#result-title').inner_text() == 'Rescue complete!')
+        rescue_save_after = page.evaluate("localStorage.getItem('bridge-builder-build-and-cross:v1')")
+        check('rescue does not alter campaign save', rescue_save_before == rescue_save_after)
+        page.screenshot(path='qa/shots/12_floodline_rescue.png')
         ctx.close()
 
         # ---------------- mobile touch (landscape + portrait) ----------------
