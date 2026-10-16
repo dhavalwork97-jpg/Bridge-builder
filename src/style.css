@@ -90,3 +90,13 @@ html, body { margin: 0; height: 100%; overflow: hidden; overscroll-behavior: non
 @media (max-height: 460px) { .menu-card { padding: 12px; gap: 6px; } .menu-card h1 { font-size: 22px; } #logo svg { max-height: 50px; } .btn.big { min-height: 44px; font-size: 16px; }
   .hint { top: calc(62px + var(--sat)); font-size: 12px; padding: 5px 10px; } .materials .mat { min-height: 44px; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+
+/* Optional Floodline Rescue mission: visually distinct, but never affects campaign layout. */
+.rescue-entry { border-color: rgba(61, 190, 235, .65); }
+.rescue-entry small { display: block; font-size: .72em; opacity: .75; margin-top: 2px; }
+.rescue-status { position: absolute; z-index: 5; top: 78px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; align-items: center; padding: 8px 14px; border: 1px solid rgba(93, 205, 246, .7); border-radius: 12px; background: rgba(12, 36, 61, .92); color: #eafaff; box-shadow: 0 5px 18px rgba(0,0,0,.22); font-size: 13px; white-space: nowrap; pointer-events: none; }
+.rescue-status[hidden] { display: none; }
+.rescue-status strong { letter-spacing: .08em; color: #82e2ff; }
+.rescue-status .urgent { color: #ffb26b; animation: rescue-pulse .7s ease-in-out infinite alternate; }
+@keyframes rescue-pulse { from { opacity: .72; } to { opacity: 1; } }
