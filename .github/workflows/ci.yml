@@ -38,6 +38,14 @@ jobs:
             if (bytes > 250 * 1024 * 1024) throw new Error("CrazyGames total-size limit exceeded (250 MiB)");
           '
 
+      - name: Upload CrazyGames build
+        uses: actions/upload-artifact@v4
+        with:
+          name: crazygames-upload-dist
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
+
   browser-qa:
     runs-on: ubuntu-latest
     steps:
