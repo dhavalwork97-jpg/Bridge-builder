@@ -100,3 +100,6 @@ html, body { margin: 0; height: 100%; overflow: hidden; overscroll-behavior: non
 .rescue-status strong { letter-spacing: .08em; color: #82e2ff; }
 .rescue-status .urgent { color: #ffb26b; animation: rescue-pulse .7s ease-in-out infinite alternate; }
 @keyframes rescue-pulse { from { opacity: .72; } to { opacity: 1; } }
+
+.rescue-status { top: calc(108px + var(--sat)); }
+@media (max-height: 460px) { .rescue-status { top: calc(92px + var(--sat)); padding: 5px 9px; font-size: 11px; } }
