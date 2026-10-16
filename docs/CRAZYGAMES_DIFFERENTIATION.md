@@ -58,6 +58,6 @@ An initial optional prototype is now wired into the game behind a separate Flood
 
 ## Current prototype status
 
-The first implementation exists on the feature branch: a separate menu entry, simulation-time flood rise, flood collision/failure, HUD countdown, waterline visual, and unit tests. GitHub Actions initially caught a duplicate getter during the first run; that duplicate has been removed, but a passing CI run has not yet been confirmed. The browser QA script and CrazyGames QA preview have not been run for this prototype.
+The first implementation exists on the feature branch: a separate menu entry, simulation-time flood rise, flood collision/failure, HUD countdown, waterline visual, and unit tests. GitHub Actions — `npm run verify` — passed at commit e96b532 (typecheck, unit tests, build, and asset check). The suite includes the deterministic flood-model tests and a reference-solution check that the short-hop bridge can cross before the deadline. The separate `npm run solve-check` command, browser QA script, and CrazyGames QA preview have not yet been run for this prototype.
 
 This remains a vertical-slice prototype, not a resubmission-ready release. Review and tune the deadline and visual readability in a real browser. Do not resubmit until automated checks pass and a human playtest confirms that the flood meaningfully changes launch timing and bridge-design decisions.
