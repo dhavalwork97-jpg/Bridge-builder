@@ -504,7 +504,7 @@ export class Game {
     if (performance.now() > this.hintOverrideUntil && this.hintOverride) { this.hintOverride = ''; this.updateHud(); }
     const sim = this.sim;
     if (this.floodlineActive) {
-      const remaining = Math.max(0, 14 - (sim?.time ?? 0));
+      const remaining = Math.max(0, 12 - (sim?.time ?? 0));
       const second = Math.ceil(remaining);
       if (second !== this.floodHudSecond) {
         this.floodHudSecond = second;
