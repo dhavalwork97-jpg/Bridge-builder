@@ -334,9 +334,9 @@ export class Game {
     this.lastEval = ev;
     this.mode = 'result';
     this.adapter.gameplayStop();
-    if (ev.completed) { this.store.submit(this.level.id, ev.stars, summary.cost); this.adapter.reportScore(this.store.totalStars()); }
+    if (ev.completed && !this.floodlineActive) { this.store.submit(this.level.id, ev.stars, summary.cost); this.adapter.reportScore(this.store.totalStars()); }
     const won = ev.completed;
-    $('result-title').textContent = won ? (this.level.id === LEVELS.length ? 'All levels complete!' : 'Level complete!') : 'Bridge failed';
+    $('result-title').textContent = won ? (this.floodlineActive ? 'Rescue complete!' : this.level.id === LEVELS.length ? 'All levels complete!' : 'Level complete!') : (this.floodlineActive ? 'Rescue failed' : 'Bridge failed');
     const stars = $('result-stars'); stars.className = 'stars big'; stars.innerHTML = '';
     for (let i = 0; i < 3; i++) {
       const filled = i < ev.stars;
@@ -348,10 +348,10 @@ export class Game {
       : `${FAIL_TEXT[sim.failReason] ?? 'The vehicle did not make it.'} Cost ${money(summary.cost)}.`;
     const obj = $('result-objectives'); obj.innerHTML = '';
     const li = (ok: boolean, text: string) => obj.insertAdjacentHTML('beforeend', `<li class="${ok ? 'ok' : 'no'}" data-mark="${ok ? '\u2713' : '\u2717'}">${text}</li>`);
-    li(won, 'Reach the other side');
+    li(won, this.floodlineActive ? 'Deliver the supply truck before the flood' : 'Reach the other side');
     li(ev.costOk, `Cost at most ${money(this.level.goldBudget)} with no broken beams`);
     li(ev.challengeOk, this.level.challenge.text);
-    const hasNext = won && this.level.id < LEVELS.length;
+    const hasNext = won && !this.floodlineActive && this.level.id < LEVELS.length;
     $('res-next').hidden = !hasNext;
     $('result').hidden = false;
     (hasNext ? $('res-next') : $('res-retry')).focus({ preventScroll: true });
