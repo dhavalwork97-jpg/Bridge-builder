@@ -10,12 +10,13 @@ Builds: `npm run build` (local/generic, zero external URLs) · `npm run build:cr
 ## CrazyGames (HTML5 SDK v3)
 Method names checked against https://docs.crazygames.com/sdk/html5-v3/ : `SDK.init()`, `game.loadingStart/loadingStop`,
 `game.gameplayStart/gameplayStop`, `game.settings.muteAudio` + `addSettingsChangeListener`.
-Implemented: init, loading start/stop, progress saving via the SDK Data module (`SDK.data.getItem/setItem`; falls back to localStorage if the SDK is absent, and an existing localStorage save is migrated on first load), gameplayStart on entering a level / resuming, gameplayStop on menus, pause, result, tab hidden; audio mute follows the platform setting.
+Implemented: init, loading start/stop, progress saving via the SDK Data module (`SDK.data.getItem/setItem`), gameplayStart on entering a level / resuming, gameplayStop on menus, pause, result, tab hidden; audio mute follows the platform setting. The Data module is the only ongoing save source. A legacy localStorage save is read only during first-load migration into SDK data; if the SDK is unavailable, the CrazyGames build does not fall back to localStorage.
 Checklist before submitting:
 - [ ] In the submission form, answer **"Does your game save progress?" = Yes** (Data module is used). The QA tool does not sync data between simulated users, so account sync cannot be tested there.
-- [x] SDK script URL `https://sdk.crazygames.com/crazygames-sdk-v3.js` and `SDK.init`, `game.loadingStart/Stop`, `game.gameplayStart/Stop` confirmed against the current v3 docs (15 Oct 2026). `game.settings.muteAudio` / `addSettingsChangeListener` could not be re-confirmed (docs page unreachable); calls are optional-chained so they are harmless if the names differ.
+- [x] SDK script URL `https://sdk.crazygames.com/crazygames-sdk-v3.js`, `SDK.init`, game lifecycle methods, Data module methods, and `game.settings.muteAudio` / `addSettingsChangeListener` checked against current official documentation (16 Oct 2026).
 - [ ] Upload `dist/` as a zip with `index.html` at the root; test in the CrazyGames QA tool (desktop + mobile).
 - [ ] Verify no external requests other than the SDK, mute control works, game is playable offline after load.
+- [ ] Build `npm run build:crazygames`, inspect the exact archive size/file count, and compare with the current 50 MB initial / 250 MB total basic-launch limits (20 MB initial for mobile homepage eligibility).
 - [x] Cover images (1920x1080, 800x1200, 800x800 per the CrazyGames cover rules), screenshots and listing copy are in `store/` (see `store/LISTING.md`). Preview videos (landscape + portrait) are in `store/video/`. Decide on monetisation separately (ads are not implemented).
 - [ ] Confirm size/load limits and mobile requirements in the current guidelines.
 
@@ -31,4 +32,4 @@ Checklist:
 - [ ] Acceptance on one platform does not imply the other.
 
 ## Not verified
-Neither SDK was exercised against the real platform (adapters are unit-tested against mocks only).
+Neither SDK was exercised against the real platform (adapters are unit-tested against mocks only). The CrazyGames QA preview has not been run, so account sync, mute behavior in the portal, SDK event timing, and platform-specific runtime behavior still need confirmation.
