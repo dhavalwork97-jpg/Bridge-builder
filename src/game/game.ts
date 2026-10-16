@@ -508,7 +508,7 @@ export class Game {
       const second = Math.ceil(remaining);
       if (second !== this.floodHudSecond) {
         this.floodHudSecond = second;
-        $('rescue-time').textContent = sim && this.mode !== 'build' ? `${second}s until flood peak` : 'Build first, then launch';
+        $('rescue-time').textContent = sim && this.mode !== 'build' ? `${second}s until flood reaches the road` : 'Build first, then launch';
         $('rescue-time').classList.toggle('urgent', !!sim && this.mode !== 'build' && remaining <= 5);
       }
     }
