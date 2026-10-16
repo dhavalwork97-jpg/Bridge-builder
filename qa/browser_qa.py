@@ -69,7 +69,7 @@ try:
         tap_world(page, 0, 0); tap_world(page, 6, 0)
         s = qa(page)
         check('tap-tap places exactly one road beam', s['beams'] == 1, str(s['beams']))
-        check('budget decreases by $480', s['used'] == 480 and s['remaining'] == 220, f"used={s['used']}")
+        check('budget decreases by $480', s['used'] == 480 and s['remaining'] == 120, f"used={s['used']} remaining={s['remaining']}")
         # second beam over budget -> rejected
         tap_world(page, 0, 0); tap_world(page, 6, 0)   # duplicate
         check('duplicate beam rejected', qa(page)['beams'] == 1)
