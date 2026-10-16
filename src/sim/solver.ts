@@ -111,12 +111,6 @@ export class Simulation {
     return Math.min(0.6, PHYSICS.waterY + (9.6 / 12) * this.time);
   }
 
-  /** Dynamic flood surface used only by the optional rescue mission. */
-  get waterLevel(): number {
-    if (!this.floodline) return PHYSICS.waterY;
-    return Math.min(1.5, PHYSICS.waterY + (10.5 / 14) * this.time);
-  }
-
   /** Advance by one fixed frame (dt must be PHYSICS.fixedDt; callers accumulate real time). */
   step(dt: number = PHYSICS.fixedDt): void {
     if (this.numericError) return;
