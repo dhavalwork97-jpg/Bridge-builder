@@ -24,8 +24,8 @@ describe('Floodline Rescue water model', () => {
   it('fails a rescue run when floodwater reaches a low vehicle wheel', () => {
     const sim = new Simulation(LEVELS[0], [], [], true);
     sim.time = 12;
-    sim.wheels[0].y = 0.1;
-    sim.wheels[1].y = 0.1;
+    sim.wheels[0].x = 2; sim.wheels[0].y = 0.1;
+    sim.wheels[1].x = 2; sim.wheels[1].y = 0.1;
     sim.step();
     expect(sim.state).toBe('failed');
     expect(sim.failReason).toBe('flood');
