@@ -18,7 +18,8 @@ Checklist before submitting:
 - [ ] Verify no external requests other than the SDK, mute control works, game is playable offline after load.
 - [ ] Build `npm run build:crazygames`, inspect the exact archive size/file count, and compare with the current 50 MB initial / 250 MB total basic-launch limits (20 MB initial for mobile homepage eligibility).
 - [x] Cover images (1920x1080, 800x1200, 800x800 per the CrazyGames cover rules), screenshots and listing copy are in `store/` (see `store/LISTING.md`). Preview videos (landscape + portrait) are in `store/video/`. Decide on monetisation separately (ads are not implemented).
-- [ ] Confirm size/load limits and mobile requirements in the current guidelines.
+- [x] Automated CrazyGames build size/file-count check: latest verify job reports 3 files and 0.63 MiB total, below the documented 250 MiB / 1,500-file total limits.
+- [ ] Measure initial-download size in the platform QA tool against the 50 MB basic limit (20 MB for mobile homepage eligibility), then test load time and mobile requirements.
 
 ## YouTube Playables
 Method names checked against https://developers.google.com/youtube/gaming/playables/ : `ytgame.game.firstFrameReady()`,
