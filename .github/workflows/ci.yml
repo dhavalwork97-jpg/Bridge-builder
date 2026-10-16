@@ -15,3 +15,42 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run verify
+      - run: npm run solve-check
+      - run: npm run build:crazygames
+      - name: Check CrazyGames bundle size and file count
+        run: |
+          node --input-type=module -e '
+            import { readdir, stat } from "node:fs/promises";
+            import { join } from "node:path";
+            async function walk(dir) {
+              const out = [];
+              for (const entry of await readdir(dir, { withFileTypes: true })) {
+                const path = join(dir, entry.name);
+                if (entry.isDirectory()) out.push(...await walk(path));
+                else out.push({ path, size: (await stat(path)).size });
+              }
+              return out;
+            }
+            const files = await walk("dist");
+            const bytes = files.reduce((n, f) => n + f.size, 0);
+            console.log(`CrazyGames dist: ${files.length} files, ${(bytes / 1024 / 1024).toFixed(2)} MiB total`);
+            if (files.length > 1500) throw new Error("CrazyGames file-count limit exceeded (1500)");
+            if (bytes > 250 * 1024 * 1024) throw new Error("CrazyGames total-size limit exceeded (250 MiB)");
+          '
+
+  browser-qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - run: python -m pip install playwright
+      - run: python -m playwright install --with-deps chromium
+      - run: npm run build
+      - run: npm run qa

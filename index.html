@@ -28,6 +28,7 @@
       </div>
 
       <div id="hint" class="hint" role="status" aria-live="polite"></div>
+      <div id="rescue-status" class="rescue-status" hidden><strong>LAST SUPPLY RUN</strong><span id="rescue-time">Build first, then launch</span></div>
       <div id="legend" class="legend panel" hidden>
         <span class="lg-tension"></span> Tension <span class="lg-comp"></span> Compression <small>brighter = closer to breaking</small>
       </div>
@@ -58,7 +59,8 @@
       <div class="menu-card">
         <div id="logo"></div>
         <h1>BRIDGE MAKER<small>BUILD &amp; CROSS</small></h1>
-        <button id="menu-play" class="btn primary big">Play</button>
+        <button id="menu-play" class="btn primary big">Play Campaign</button>
+        <button id="menu-rescue" class="btn big rescue-entry">Floodline Rescue <small>Emergency mission</small></button>
         <button id="menu-levels" class="btn big">Levels</button>
         <button id="menu-settings" class="btn big">Settings</button>
         <button id="menu-credits" class="btn big">Credits</button>

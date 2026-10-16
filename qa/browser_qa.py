@@ -42,7 +42,7 @@ try:
         # ---------------- desktop ----------------
         ctx = b.new_context(viewport={'width': 1280, 'height': 720})
         page = ctx.new_page()
-        page.on('console', lambda m: errors.append(m.text) if m.type in ('error', 'warning') and 'GPU stall due to ReadPixels' not in mm.text else None)
+        page.on('console', lambda m: errors.append(m.text) if m.type in ('error', 'warning') and 'GPU stall due to ReadPixels' not in m.text else None)
         page.on('pageerror', lambda e: errors.append('PAGEERROR ' + str(e)))
         page.on('request', lambda r: requests.append(r.url))
         page.goto(f'http://localhost:{PORT}/index.html')
@@ -69,7 +69,7 @@ try:
         tap_world(page, 0, 0); tap_world(page, 6, 0)
         s = qa(page)
         check('tap-tap places exactly one road beam', s['beams'] == 1, str(s['beams']))
-        check('budget decreases by $480', s['used'] == 480 and s['remaining'] == 220, f"used={s['used']}")
+        check('budget decreases by $480', s['used'] == 480 and s['remaining'] == 120, f"used={s['used']} remaining={s['remaining']}")
         # second beam over budget -> rejected
         tap_world(page, 0, 0); tap_world(page, 6, 0)   # duplicate
         check('duplicate beam rejected', qa(page)['beams'] == 1)
@@ -158,13 +158,38 @@ try:
         click_ui(page, '#menu-settings'); page.wait_for_timeout(200); page.screenshot(path='qa/shots/11_settings.png')
         page.click('#screen-settings [data-back]'); click_ui(page, '#menu-credits'); page.wait_for_timeout(200)
         check('settings and credits reachable', True)
+
+        # ---------------- Floodline Rescue mission smoke test ----------------
+        page.click('#screen-credits [data-back]'); page.wait_for_timeout(150)
+        click_ui(page, '#menu-rescue'); page.wait_for_selector('#toolbar', state='visible')
+        check('Floodline Rescue opens without campaign unlock', qa(page)['level'] == 2 and qa(page)['mode'] == 'build')
+        check('rescue briefing and countdown HUD visible',
+              page.locator('#rescue-status').is_visible() and 'Emergency supply run' in page.locator('#hint').inner_text())
+        rescue_save_before = page.evaluate("localStorage.getItem('bridge-builder-build-and-cross:v1')")
+        # Reference short-hop structure, built using the same pointer input as a player.
+        page.click('.mat[data-mat="road"]')
+        tap_world(page, 0, 0); tap_world(page, 5, 0)
+        tap_world(page, 5, 0); tap_world(page, 10, 0)
+        page.click('.mat[data-mat="wood"]')
+        tap_world(page, 0, -4); tap_world(page, 5, 0)
+        tap_world(page, 10, -4); tap_world(page, 5, 0)
+        check('rescue route can be built within the UI', qa(page)['beams'] == 4, str(qa(page)['beams']))
+        click_ui(page, '#btn-test')
+        rescue = wait_state(page, lambda s: s['mode'] == 'result', 20)
+        check('rescue truck crosses before flood deadline',
+              rescue['mode'] == 'result' and rescue['simState'] == 'won', str(rescue['simState']))
+        check('rescue completion has its own result screen',
+              page.locator('#result-title').inner_text() == 'Rescue complete!')
+        rescue_save_after = page.evaluate("localStorage.getItem('bridge-builder-build-and-cross:v1')")
+        check('rescue does not alter campaign save', rescue_save_before == rescue_save_after)
+        page.screenshot(path='qa/shots/12_floodline_rescue.png')
         ctx.close()
 
         # ---------------- mobile touch (landscape + portrait) ----------------
         for name, vp in [('landscape', {'width': 844, 'height': 390}), ('portrait', {'width': 390, 'height': 844})]:
             mctx = b.new_context(viewport=vp, device_scale_factor=3, has_touch=True, is_mobile=True)
             m = mctx.new_page()
-            m.on('console', lambda mm: errors.append(mm.text) if mm.type in ('error', 'warning') and 'GPU stall due to ReadPixels' not in m.text else None)
+            m.on('console', lambda mm: errors.append(mm.text) if mm.type in ('error', 'warning') and 'GPU stall due to ReadPixels' not in mm.text else None)
             m.on('pageerror', lambda e: errors.append('PAGEERROR ' + str(e)))
             m.on('request', lambda r: requests.append(r.url))
             m.goto(f'http://localhost:{PORT}/index.html'); m.wait_for_selector('#menu-play')

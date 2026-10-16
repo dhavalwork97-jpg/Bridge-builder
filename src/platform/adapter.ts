@@ -60,21 +60,32 @@ export class CrazyGamesAdapter implements PlatformAdapter {
   readonly name = 'crazygames' as const;
   sdkReady = false;
   /**
-   * Progress goes through the SDK Data module (account-synced for logged-in players; guests are kept in
-   * localStorage by the SDK itself). If the SDK is missing or failed, we fall back to plain localStorage,
-   * and an existing localStorage save is read when the Data module has nothing yet (one-time migration).
+   * CrazyGames requires the Data module to be the sole save source. The only localStorage
+   * access here is a one-time migration of saves created by older builds into SDK.data.
+   * If the SDK is unavailable, do not silently switch persistence systems.
    */
   readonly usesPlatformSave = true;
   private get data(): any { return this.sdkReady ? this.win.CrazyGames?.SDK?.data : undefined; }
   private get ls(): any { try { return this.win.localStorage; } catch { return undefined; } }
   async loadSave(): Promise<string | null> {
-    try { const v = this.data?.getItem?.(SAVE_KEY); if (typeof v === 'string' && v.length > 0) return v; } catch { /* fall through */ }
-    try { const v = this.ls?.getItem?.(SAVE_KEY); return typeof v === 'string' && v.length > 0 ? v : null; } catch { return null; }
+    const d = this.data;
+    if (!d || typeof d.getItem !== 'function') return null;
+    try {
+      const saved = d.getItem(SAVE_KEY);
+      if (typeof saved === 'string' && saved.length > 0) return saved;
+      // One-time migration: copy an older browser save into the platform's Data module.
+      // Never read from localStorage as an ongoing fallback.
+      const legacy = this.ls?.getItem?.(SAVE_KEY);
+      if (typeof legacy === 'string' && legacy.length > 0) {
+        if (typeof d.setItem === 'function') d.setItem(SAVE_KEY, legacy);
+        return legacy;
+      }
+    } catch { /* unavailable platform storage must not break gameplay */ }
+    return null;
   }
   writeSave(data: string): void {
     const d = this.data;
-    if (d && typeof d.setItem === 'function') { safe(() => d.setItem(SAVE_KEY, data)); return; }
-    safe(() => this.ls?.setItem?.(SAVE_KEY, data));
+    if (d && typeof d.setItem === 'function') safe(() => d.setItem(SAVE_KEY, data));
   }
   private playing = false;
   constructor(private win: any = globalThis) {}
