@@ -22,6 +22,16 @@ describe('Floodline Rescue water model', () => {
     expect(sim.waterLevel).toBeCloseTo(0.6, 6);
   });
 
+  it('allows the reference short-hop design to finish before the flood reaches the road', () => {
+    const level = LEVELS[1];
+    const { graph, errors } = buildSolution(level, SOLUTIONS[level.id]);
+    expect(errors).toEqual([]);
+    const sim = new Simulation(level, graph.nodes, graph.beams, true);
+    for (let i = 0; i < 14 * 60 && sim.state === 'running'; i++) sim.step();
+    expect(sim.state).toBe('won');
+    expect(sim.time).toBeLessThan(12);
+  });
+
   it('fails a rescue run when floodwater reaches a low vehicle wheel', () => {
     const sim = new Simulation(LEVELS[0], [], [], true);
     sim.time = 12;
