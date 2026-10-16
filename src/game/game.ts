@@ -23,7 +23,7 @@ type Mode = 'build' | 'test' | 'result';
 const $ = <T extends HTMLElement = HTMLElement>(id: string): T => document.getElementById(id) as T;
 const money = (n: number): string => '$' + Math.round(n).toLocaleString('en-US');
 const FAIL_TEXT: Record<string, string> = {
-  flood: 'The flood overtook the supply truck. Launch sooner or simplify the bridge.', fell: 'The vehicle fell into the gorge.', stuck: 'The vehicle got stuck.', flipped: 'The vehicle flipped over.',
+  flood: 'Floodwater reached the road. Simplify the bridge and launch sooner.', fell: 'The vehicle fell into the gorge.', stuck: 'The vehicle got stuck.', flipped: 'The vehicle flipped over.',
   timeout: 'The vehicle took too long.', numeric: 'The simulation became unstable.',
 };
 const STAR_PATH = 'M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z';
@@ -256,7 +256,7 @@ export class Game {
     this.floodlineActive = floodline;
     this.floodHudSecond = -1;
     $('rescue-status').hidden = !floodline;
-    if (!this.store.isUnlocked(level.id)) { this.toast('Complete the previous level to unlock this one.'); return; }
+    if (!floodline && !this.store.isUnlocked(level.id)) { this.toast('Complete the previous level to unlock this one.'); return; }
     this.sim = null; this.paused = false; this.mode = 'build'; this.endTimer = 0; this.resultShown = false; this.speed = 1;
     $('btn-speed').textContent = '1\u00d7';
     this.setLevelContext(level, true);
