@@ -66,7 +66,7 @@ export class Simulation {
   private braking = false;
   private nodeIndex = new Map<number, number>();
 
-  constructor(public readonly level: LevelDef, nodes: BNode[], beams: BBeam[]) {
+  constructor(public readonly level: LevelDef, nodes: BNode[], beams: BBeam[], private readonly floodline = false) {
     this.vehicle = VEHICLES[level.vehicle];
     this.segments = terrainSegments(level.landmasses);
     this.build(nodes, beams);
@@ -103,6 +103,12 @@ export class Simulation {
       });
     }
     this.nodes.forEach((n, i) => { n.invMass = n.fixed ? 0 : 1 / Math.max(PHYSICS.minNodeMass, mass[i]); });
+  }
+
+  /** Dynamic flood surface used only by the optional rescue mission. */
+  get waterLevel(): number {
+    if (!this.floodline) return PHYSICS.waterY;
+    return Math.min(1.5, PHYSICS.waterY + (10.5 / 14) * this.time);
   }
 
   /** Advance by one fixed frame (dt must be PHYSICS.fixedDt; callers accumulate real time). */
@@ -409,10 +415,11 @@ export class Simulation {
     if (this.state !== 'running') return;
     const [w0, w1] = this.wheels;
     for (const w of this.wheels) {
-      if (!this.splashed && w.y < PHYSICS.waterY) {
+      if (!this.splashed && w.y < this.waterLevel) {
         this.splashed = true;
-        this.events.push({ type: 'splash', x: w.x, y: PHYSICS.waterY });
+        this.events.push({ type: 'splash', x: w.x, y: this.waterLevel });
       }
+      if (this.floodline && w.y < this.waterLevel) { this.fail('flood'); return; }
       if (w.y < PHYSICS.killY) { this.fail('fell'); return; }
     }
     if (w0.x >= this.level.goalX && w0.terrain && w1.x >= this.level.goalX - 0.5) {
