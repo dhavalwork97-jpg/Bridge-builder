@@ -23,7 +23,7 @@ type Mode = 'build' | 'test' | 'result';
 const $ = <T extends HTMLElement = HTMLElement>(id: string): T => document.getElementById(id) as T;
 const money = (n: number): string => '$' + Math.round(n).toLocaleString('en-US');
 const FAIL_TEXT: Record<string, string> = {
-  fell: 'The vehicle fell into the gorge.', stuck: 'The vehicle got stuck.', flipped: 'The vehicle flipped over.',
+  flood: 'The flood overtook the supply truck. Launch sooner or simplify the bridge.', fell: 'The vehicle fell into the gorge.', stuck: 'The vehicle got stuck.', flipped: 'The vehicle flipped over.',
   timeout: 'The vehicle took too long.', numeric: 'The simulation became unstable.',
 };
 const STAR_PATH = 'M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z';
@@ -73,6 +73,8 @@ export class Game {
   private debug = /[?&]debug\b/.test(location.search);
   private frameMs = 16; private simMs = 0;
   private stressView = false;
+  private floodlineActive = false;
+  private floodHudSecond = -1;
 
   constructor() {
     this.ctrl = new ConstructionController(this.graph, this.cam, {
@@ -157,6 +159,7 @@ export class Game {
     const on = (id: string, fn: () => void) => $(id).addEventListener('click', () => { this.synth.unlock(); this.synth.click(); fn(); });
     window.addEventListener('pointerdown', () => this.synth.unlock(), { passive: true });
     on('menu-play', () => this.startLevel(this.nextPlayable()));
+    on('menu-rescue', () => this.startLevel(LEVELS[1], true));
     on('menu-levels', () => this.showScreen('levels'));
     on('menu-settings', () => this.showScreen('settings'));
     on('menu-credits', () => this.showScreen('credits'));
@@ -249,7 +252,10 @@ export class Game {
 
   private leaveToLevels(): void { this.showScreen('levels'); }
 
-  startLevel(level: LevelDef): void {
+  startLevel(level: LevelDef, floodline = false): void {
+    this.floodlineActive = floodline;
+    this.floodHudSecond = -1;
+    $('rescue-status').hidden = !floodline;
     if (!this.store.isUnlocked(level.id)) { this.toast('Complete the previous level to unlock this one.'); return; }
     this.sim = null; this.paused = false; this.mode = 'build'; this.endTimer = 0; this.resultShown = false; this.speed = 1;
     $('btn-speed').textContent = '1\u00d7';
@@ -287,7 +293,7 @@ export class Game {
     const report = analyzeStructure(this.level, this.graph.nodes, this.graph.beams);
     if (report.hint === 'noRoad') { this.reject(null, 'Lay a road across the gap before testing.'); return; }
     this.ctrl.reset();
-    this.sim = new Simulation(this.level, this.graph.nodes, this.graph.beams);
+    this.sim = new Simulation(this.level, this.graph.nodes, this.graph.beams, this.floodlineActive);
     this.stepper.reset();
     this.mode = 'test'; this.paused = false; this.endTimer = 0; this.resultShown = false; this.lastProgress = -1;
     this.particles.clear();
@@ -497,6 +503,15 @@ export class Game {
     }
     if (performance.now() > this.hintOverrideUntil && this.hintOverride) { this.hintOverride = ''; this.updateHud(); }
     const sim = this.sim;
+    if (this.floodlineActive) {
+      const remaining = Math.max(0, 14 - (sim?.time ?? 0));
+      const second = Math.ceil(remaining);
+      if (second !== this.floodHudSecond) {
+        this.floodHudSecond = second;
+        $('rescue-time').textContent = sim && this.mode !== 'build' ? `${second}s until flood peak` : 'Build first, then launch';
+        $('rescue-time').classList.toggle('urgent', !!sim && this.mode !== 'build' && remaining <= 5);
+      }
+    }
     if (!sim || this.mode === 'build') return;
     const steps = this.stepper.advance(dt, this.paused, this.speed);
     const s0 = performance.now();
@@ -553,11 +568,29 @@ export class Game {
     });
     this.stage.render(this.cam, this.time);
 
+    // 2D overlay: mission flood is drawn over the 3D water plane, then construction feedback.
+    if (this.floodlineActive && this.screen === 'play' && this.mode !== 'build') this.drawFloodline(c, sim?.waterLevel ?? -9);
     // 2D overlay: build grid, hover/selection feedback, particles, placement preview
     if (building) this.drawGrid(c);
     if (building) this.drawBuildFeedback(c);
     this.particles.draw(c, this.cam);
     if (building) this.drawPreview(c);
+  }
+
+  private drawFloodline(c: CanvasRenderingContext2D, level: number): void {
+    const left = this.cam.worldToScreen({ x: -12, y: level });
+    const right = this.cam.worldToScreen({ x: this.level.goalX + 12, y: level });
+    c.save();
+    c.fillStyle = 'rgba(28, 150, 220, 0.28)';
+    c.beginPath(); c.moveTo(left.x, left.y); c.lineTo(right.x, right.y); c.lineTo(this.w, this.h); c.lineTo(0, this.h); c.closePath(); c.fill();
+    c.strokeStyle = 'rgba(117, 224, 255, 0.9)'; c.lineWidth = 2;
+    c.beginPath();
+    for (let i = 0; i <= 32; i++) {
+      const x = left.x + (right.x - left.x) * i / 32;
+      const y = left.y + Math.sin(i * 0.9 + this.time * 2.5) * 3;
+      if (i === 0) c.moveTo(x, y); else c.lineTo(x, y);
+    }
+    c.stroke(); c.restore();
   }
 
   private drawGrid(c: CanvasRenderingContext2D): void {
