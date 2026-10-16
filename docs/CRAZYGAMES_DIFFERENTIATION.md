@@ -16,7 +16,7 @@ The key difference must be in decisions and outcomes, not merely the setting. En
 
 ## Vertical slice before a full conversion
 
-Build one optional, self-contained prototype mission using the existing physics and construction systems. Do not replace the current 30-level campaign or alter the existing level schema until the prototype has been validated.
+An initial optional prototype is now wired into the game behind a separate Floodline Rescue menu entry. It reuses the short-hop level geometry and existing construction controls; it does not replace the campaign or change the level schema. The deadline and rising water are prototype tuning and still require playtesting.
 
 ### Mission: The Last Supply Run
 
@@ -56,6 +56,8 @@ Build one optional, self-contained prototype mission using the existing physics 
 - [ ] CrazyGames QA preview has been tested on desktop and mobile.
 - [ ] Store assets accurately show the differentiated gameplay.
 
-## Important status note
+## Current prototype status
 
-This document is a design and implementation plan, not evidence that the new mode exists. Do not resubmit based on this plan alone. The resubmission decision should wait until the vertical slice is implemented, tested, and demonstrably different in play.
+The first implementation exists on the feature branch: a separate menu entry, simulation-time flood rise, flood collision/failure, HUD countdown, waterline visual, and unit tests. GitHub Actions initially caught a duplicate getter during the first run; that duplicate has been removed, but a passing CI run has not yet been confirmed. The browser QA script and CrazyGames QA preview have not been run for this prototype.
+
+This remains a vertical-slice prototype, not a resubmission-ready release. Review and tune the deadline and visual readability in a real browser. Do not resubmit until automated checks pass and a human playtest confirms that the flood meaningfully changes launch timing and bridge-design decisions.
