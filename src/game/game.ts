@@ -381,6 +381,7 @@ export class Game {
 
   private contextHint(): string {
     if (this.mode !== 'build') return '';
+    if (this.floodlineActive && this.graph.beams.length === 0 && this.ctrl.pendingFrom === null) return 'Emergency supply run: build a safe crossing, then press Test Bridge. The flood timer starts on launch; reach the far bank before the water overtakes the road.';
     if (this.ctrl.pendingFrom !== null) return 'Now tap a second point (or empty space to add a joint). Tap the same point to cancel.';
     if (this.ctrl.selectedBeam !== null) return 'Beam selected: press Delete to remove it.';
     if (this.levelHintActive && this.graph.beams.length === 0) return this.level.hint;
